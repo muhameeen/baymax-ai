@@ -37,15 +37,12 @@
   transition:opacity .4s ease,transform .4s ease;
   background:#fff;
   z-index:5;
+ animation: welcomeIn .6s ease;
 }
 section{
     position:relative;
 }
-#welcome.hidden{
-  opacity:0;
-  transform:translateY(-10px);
-  pointer-events:none;
-}
+
 
 #welcome h2{
   margin:12px 0 8px;
@@ -62,7 +59,24 @@ section{
   width:72px;
   height:72px;
   font-size:32px;
-}  
+}
+ @keyframes welcomeIn{
+    from{
+        opacity:0;
+        transform:translateY(25px);
+    }
+    to{
+        opacity:1;
+        transform:translateY(0);
+    }
+}
+
+#welcome.hidden{
+    opacity:0;
+    transform:translateY(-15px);
+    transition:.45s;
+    pointer-events:none;
+}
  @media(max-width:800px){main{grid-template-columns:1fr}.msg{max-width:96%}section{min-height:70vh}}
 </style>
 </head>
@@ -178,18 +192,49 @@ async function sendMsg(message){
     }
 }
 
-if(history.length===0){
-    welcome.classList.add("hidden");
 
-    setTimeout(()=>{
-        welcome.remove(); 
-    },400);
-}
- {add("user", message);send.disabled = true;text.disabled = true;setStatus("Contacting Baymax", "wait");send.disabled=true;text.disabled=true;setStatus("Contacting Baymax","wait");try{const path=endpoint.value;const body={path,message,prompt:message,messages:history.filter(m=>m.content!=="...")};const url=USE_RELAY?"/baymax-proxy":BAYMAX_BASE+(path==="/"?"":path);const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"true"},body:JSON.stringify(body)});const data=(r.headers.get("content-type")||"").includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(typeof data==="string"?data:data?.detail||r.statusText);history[history.length-1]={role:"assistant",content:reply(data)||"Baymax returned an empty response."};route.textContent="Using POST "+path;setStatus("Connected","ok")}catch(e){history[history.length-1]={role:"assistant",content:"I could not reach Baymax. "+(e?.message||e)};setStatus("Connection issue","bad")}finally{render();send.disabled=false;text.disabled=false;text.focus()}}
 $("#form").onsubmit=e=>{e.preventDefault();const v=text.value.trim();if(v){text.value="";sendMsg(v)}};
 text.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#form").requestSubmit()}};
-$("#clear").onclick=()=>{history=[];setStatus("Ready");render()};
-endpoint.onchange=()=>{route.textContent="Using POST "+endpoint.value};
+$("#clear").onclick = () => {
+
+    history = [];
+
+    render();
+
+    if (!document.getElementById("welcome")) {
+
+        const welcome = document.createElement("div");
+
+        welcome.id = "welcome";
+
+        welcome.innerHTML = `
+            <div class="logo">B</div>
+            <h2>Baymax</h2>
+
+            <p>
+                Your personal AI health assistant.<br><br>
+
+                Ask about symptoms,
+                medicines,
+                nutrition,
+                fitness,
+                wellness,
+                or anything you're curious about.
+            </p>
+        `;
+
+        document.querySelector("header").insertAdjacentElement(
+    "afterend",
+    welcome
+);
+    }
+
+    setStatus("Ready");
+};
+ endpoint.onchange = () => {
+    route.textContent = "Using POST " + endpoint.value;
+};
+
 render();
 </script>
 </body>

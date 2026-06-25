@@ -48,7 +48,7 @@
 const BAYMAX_BASE="https://germinate-neon-hertz.ngrok-free.dev";
 const USE_RELAY=false;
 const $=s=>document.querySelector(s), msgs=$("#messages"), endpoint=$("#endpoint"), dot=$("#dot"), status=$("#status"), route=$("#route"), text=$("#text"), send=$("#send");
-let history=[{role:"assistant",content:"Hello, I am Baymax. How can I help?"}];
+let history=[];
 function setStatus(t,c=""){status.textContent=t;dot.className=("dot "+c).trim()}
 function render(){msgs.innerHTML=history.map(m=>`<div class="msg ${m.role==="user"?"user":"bot"}"><div class="mini">${m.role==="user"?"You":"B"}</div><div class="bubble"></div></div>`).join("");[...msgs.querySelectorAll(".bubble")].forEach((b,i)=>b.textContent=history[i].content);msgs.scrollTop=msgs.scrollHeight}
 function add(role,content){history.push({role,content});render()}

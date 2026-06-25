@@ -38,7 +38,9 @@
   background:#fff;
   z-index:5;
 }
-
+section{
+    position:relative;
+}
 #welcome.hidden{
   opacity:0;
   transform:translateY(-10px);
@@ -100,13 +102,87 @@ function setStatus(t,c=""){status.textContent=t;dot.className=("dot "+c).trim()}
 function render(){msgs.innerHTML=history.map(m=>`<div class="msg ${m.role==="user"?"user":"bot"}"><div class="mini">${m.role==="user"?"You":"B"}</div><div class="bubble"></div></div>`).join("");[...msgs.querySelectorAll(".bubble")].forEach((b,i)=>b.textContent=history[i].content);msgs.scrollTop=msgs.scrollHeight}
 function add(role,content){history.push({role,content});render()}
 function reply(x){if(typeof x==="string")return x;return x?.reply||x?.response||x?.answer||x?.message?.content||x?.message||x?.output||x?.text||x?.choices?.[0]?.message?.content||JSON.stringify(x,null,2)}
-async function sendMsg(message)const welcome = document.getElementById("welcome");
+async function sendMsg(message){
+
+    const welcome = document.getElementById("welcome");
+
+    if (welcome) {
+        welcome.classList.add("hidden");
+
+        setTimeout(() => {
+            welcome.remove();
+        }, 400);
+    }
+
+    add("user", message);
+
+    send.disabled = true;
+    text.disabled = true;
+    setStatus("Contacting Baymax", "wait");
+
+    try {
+
+        const path = endpoint.value;
+
+        const body = {
+            path,
+            message,
+            prompt: message,
+            messages: history
+        };
+
+        const url = USE_RELAY
+            ? "/baymax-proxy"
+            : BAYMAX_BASE + (path === "/" ? "" : path);
+
+        const r = await fetch(url,{
+            method:"POST",
+            headers:{
+                "Content-Type":"application/json",
+                "ngrok-skip-browser-warning":"true"
+            },
+            body:JSON.stringify(body)
+        });
+
+        const data =
+            (r.headers.get("content-type") || "").includes("json")
+            ? await r.json()
+            : await r.text();
+
+        if(!r.ok){
+            throw new Error(
+                typeof data==="string"
+                ? data
+                : data.detail || r.statusText
+            );
+        }
+
+        add("assistant", reply(data));
+
+        route.textContent = "Using POST " + path;
+        setStatus("Connected","ok");
+
+    } catch(e){
+
+        add("assistant","I could not reach Baymax.\n\n"+(e.message||e));
+
+        setStatus("Connection issue","bad");
+
+    } finally{
+
+        render();
+
+        send.disabled = false;
+        text.disabled = false;
+        text.focus();
+    }
+}
 
 if(history.length===0){
     welcome.classList.add("hidden");
 
     setTimeout(()=>{
-        welcome.remove();
+        welcome.remove(); 
     },400);
 }
  {add("user", message);send.disabled = true;text.disabled = true;setStatus("Contacting Baymax", "wait");send.disabled=true;text.disabled=true;setStatus("Contacting Baymax","wait");try{const path=endpoint.value;const body={path,message,prompt:message,messages:history.filter(m=>m.content!=="...")};const url=USE_RELAY?"/baymax-proxy":BAYMAX_BASE+(path==="/"?"":path);const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"true"},body:JSON.stringify(body)});const data=(r.headers.get("content-type")||"").includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(typeof data==="string"?data:data?.detail||r.statusText);history[history.length-1]={role:"assistant",content:reply(data)||"Baymax returned an empty response."};route.textContent="Using POST "+path;setStatus("Connected","ok")}catch(e){history[history.length-1]={role:"assistant",content:"I could not reach Baymax. "+(e?.message||e)};setStatus("Connection issue","bad")}finally{render();send.disabled=false;text.disabled=false;text.focus()}}

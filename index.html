@@ -25,21 +25,35 @@
   footer{border-top:1px solid #dde3ee;padding:16px;background:#fbfcfe}.bar{display:grid;grid-template-columns:1fr 54px;gap:10px}
   textarea{min-height:54px;resize:vertical}.send,.clear,.download{border:0;border-radius:8px;background:#e44343;color:#fff;cursor:pointer;font-weight:800}.clear,.download{background:#fff;color:#3e4858;border:1px solid #dde3ee;padding:10px}.download{width:100%;text-align:center;text-decoration:none;display:block}
   button:disabled{opacity:.65;cursor:wait}.hint{font-size:13px;color:#667084;margin:9px 0 0}
+ #chat-area{
+    position:relative;
+    flex:1;
+    overflow:auto;
+}
+
+#messages{
+    height:100%;
+}
 #welcome{
   position:absolute;
-  inset:0;
+  
+     top:0;
+    left:0;
+    right:0;
+    bottom:0;
   display:flex;
   flex-direction:column;
   justify-content:center;
   align-items:center;
   text-align:center;
+ flex-direction:column;
   padding:40px;
   transition:opacity .4s ease,transform .4s ease;
-  background:#fff;
+  background:white;
   z-index:5;
  animation: welcomeIn .6s ease;
 }
-section{
+#section{
     position:relative;
 }
 
@@ -92,7 +106,8 @@ section{
   </aside>
   <section aria-label="Baymax chat">
     <header><div><h2>Conversation</h2><p id="route">Using POST /chat</p></div><button class="clear" id="clear" type="button">Clear</button></header>
-    <div id="welcome">
+   <div id="chat-area"> 
+   <div id="welcome">
     <div class="logo">B</div>
     <h2>Baymax</h2>
     <p>
@@ -103,7 +118,7 @@ section{
         or anything you're curious about.
     </p>
 </div>
-   <div id="messages" aria-live="polite"></div>
+   <div id="messages" aria-live="polite"></div></div>
     <footer><form class="bar" id="form"><textarea id="text" placeholder="Message Baymax..." required></textarea><button class="send" id="send" type="submit" aria-label="Send">➜</button></form><p class="hint">Enter sends. Shift + Enter adds a line.</p></footer>
   </section>
 </main>

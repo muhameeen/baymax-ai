@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1" />
+<title>Baymax Chat</title>
+<style>
+  *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f6f8fb;color:#1e2530}
+  main{min-height:100vh;display:grid;grid-template-columns:300px 1fr;gap:18px;padding:18px;max-width:1100px;margin:auto}
+  aside,section{background:#fff;border:1px solid #dde3ee;border-radius:8px;box-shadow:0 18px 50px #1b24301a}
+  aside{padding:20px;display:flex;flex-direction:column;gap:16px}
+  h1{margin:0;font-size:28px}.sub{color:#667084;margin:6px 0 10px}.note{font-size:13px;line-height:1.45;color:#667084;background:#f6f8fb;border:1px solid #dde3ee;border-radius:8px;padding:10px}
+  .logo{width:58px;height:58px;border-radius:50%;background:#e44343;color:#fff;display:grid;place-items:center;font-weight:800;font-size:28px}
+  label{font-size:12px;text-transform:uppercase;font-weight:700;color:#596579}
+  input,select,textarea{width:100%;border:1px solid #d8deea;border-radius:8px;padding:12px;font:inherit;outline:none}
+  input:focus,select:focus,textarea:focus{border-color:#e44343;box-shadow:0 0 0 4px #e4434320}
+  .status{margin-top:auto;color:#667084;font-size:14px}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#9aa5b7;margin-right:8px}.ok{background:#20a260}.bad{background:#d83f3f}.wait{background:#d98a13}
+  section{display:grid;grid-template-rows:auto 1fr auto;min-height:calc(100vh - 36px);overflow:hidden}
+  header{padding:18px 20px;border-bottom:1px solid #dde3ee;display:flex;justify-content:space-between;gap:12px;align-items:center}
+  header h2{margin:0;font-size:18px} header p{margin:4px 0 0;color:#667084;font-size:14px}
+  #messages{padding:22px;overflow:auto;display:flex;flex-direction:column;gap:14px}
+  .msg{display:flex;gap:10px;max-width:84%;align-items:flex-end}.user{align-self:flex-end;flex-direction:row-reverse}
+  .mini{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#e44343;color:#fff;font-size:12px;font-weight:800;flex:0 0 auto}.user .mini{background:#26334a}
+  .bubble{padding:13px 15px;border-radius:8px;line-height:1.48;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #dde3ee;background:#fff}.user .bubble{background:#26334a;color:#fff;border-color:#26334a}
+  footer{border-top:1px solid #dde3ee;padding:16px;background:#fbfcfe}.bar{display:grid;grid-template-columns:1fr 54px;gap:10px}
+  textarea{min-height:54px;resize:vertical}.send,.clear,.download{border:0;border-radius:8px;background:#e44343;color:#fff;cursor:pointer;font-weight:800}.clear,.download{background:#fff;color:#3e4858;border:1px solid #dde3ee;padding:10px}.download{width:100%;text-align:center;text-decoration:none;display:block}
+  button:disabled{opacity:.65;cursor:wait}.hint{font-size:13px;color:#667084;margin:9px 0 0}
+  @media(max-width:800px){main{grid-template-columns:1fr}.msg{max-width:96%}section{min-height:70vh}}
+</style>
+</head>
+<body>
+<main>
+  <aside>
+    <div class="logo">B</div>
+    <div><h1>Baymax</h1><p class="sub">Simple FastAPI chat frontend.</p></div>
+    <label for="endpoint">Endpoint</label><select id="endpoint"><option value="/chat">/chat</option><option value="/api/chat">/api/chat</option><option value="/ask">/ask</option><option value="/generate">/generate</option><option value="/">Root</option></select>
+    <a class="download" href="/baymax-chat-public.html" download="baymax-chat-public.html">Download Public HTML</a>
+    <p class="note">Preview uses a local relay. The downloaded public HTML calls Baymax directly, so Baymax must allow browser CORS for the public host.</p>
+    <div class="status" role="status"><span id="dot" class="dot"></span><span id="status">Ready</span></div>
+  </aside>
+  <section aria-label="Baymax chat">
+    <header><div><h2>Conversation</h2><p id="route">Using POST /chat</p></div><button class="clear" id="clear" type="button">Clear</button></header>
+    <div id="messages" aria-live="polite"></div>
+    <footer><form class="bar" id="form"><textarea id="text" placeholder="Message Baymax..." required></textarea><button class="send" id="send" type="submit" aria-label="Send">➜</button></form><p class="hint">Enter sends. Shift + Enter adds a line.</p></footer>
+  </section>
+</main>
+<script>
+const BAYMAX_BASE="https://germinate-neon-hertz.ngrok-free.dev";
+const USE_RELAY=false;
+const $=s=>document.querySelector(s), msgs=$("#messages"), endpoint=$("#endpoint"), dot=$("#dot"), status=$("#status"), route=$("#route"), text=$("#text"), send=$("#send");
+let history=[{role:"assistant",content:"Hello, I am Baymax. How can I help?"}];
+function setStatus(t,c=""){status.textContent=t;dot.className=("dot "+c).trim()}
+function render(){msgs.innerHTML=history.map(m=>`<div class="msg ${m.role==="user"?"user":"bot"}"><div class="mini">${m.role==="user"?"You":"B"}</div><div class="bubble"></div></div>`).join("");[...msgs.querySelectorAll(".bubble")].forEach((b,i)=>b.textContent=history[i].content);msgs.scrollTop=msgs.scrollHeight}
+function add(role,content){history.push({role,content});render()}
+function reply(x){if(typeof x==="string")return x;return x?.reply||x?.response||x?.answer||x?.message?.content||x?.message||x?.output||x?.text||x?.choices?.[0]?.message?.content||JSON.stringify(x,null,2)}
+async function sendMsg(message){add("user",message);history.push({role:"assistant",content:"..."});render();send.disabled=true;text.disabled=true;setStatus("Contacting Baymax","wait");try{const path=endpoint.value;const body={path,message,prompt:message,messages:history.filter(m=>m.content!=="...")};const url=USE_RELAY?"/baymax-proxy":BAYMAX_BASE+(path==="/"?"":path);const r=await fetch(url,{method:"POST",headers:{"Content-Type":"application/json","ngrok-skip-browser-warning":"true"},body:JSON.stringify(body)});const data=(r.headers.get("content-type")||"").includes("json")?await r.json():await r.text();if(!r.ok)throw new Error(typeof data==="string"?data:data?.detail||r.statusText);history[history.length-1]={role:"assistant",content:reply(data)||"Baymax returned an empty response."};route.textContent="Using POST "+path;setStatus("Connected","ok")}catch(e){history[history.length-1]={role:"assistant",content:"I could not reach Baymax. "+(e?.message||e)};setStatus("Connection issue","bad")}finally{render();send.disabled=false;text.disabled=false;text.focus()}}
+$("#form").onsubmit=e=>{e.preventDefault();const v=text.value.trim();if(v){text.value="";sendMsg(v)}};
+text.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#form").requestSubmit()}};
+$("#clear").onclick=()=>{history=[{role:"assistant",content:"Hello, I am Baymax. How can I help?"}];setStatus("Ready");render()};
+endpoint.onchange=()=>{route.textContent="Using POST "+endpoint.value};
+render();
+</script>
+</body>
+</html>

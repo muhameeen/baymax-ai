@@ -187,30 +187,41 @@ button,input,select,textarea{font-family:var(--font);color:inherit;border:none;b
 }
 .bub.err{border-left-color:#ef4444;background:#fef2f2;color:#b91c1c}
 
-/* ── Baymax Thinking Animation ── */
+/* ── Thinking indicator (Claude/ChatGPT style) ── */
 .thinking-wrap{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .22s var(--ease)}
 .thinking-bub{
-  padding:16px 20px;border-radius:var(--r);
+  padding:13px 16px;border-radius:var(--r);
   background:var(--sb);border:1px solid var(--border);
   border-left:2.5px solid var(--accent);
   box-shadow:0 1px 4px rgba(0,0,0,.05);
-  display:flex;align-items:center;gap:12px;
+  display:flex;align-items:center;gap:10px;
+  font-family:var(--serif);font-size:14.5px;color:var(--text2);
 }
-.baymax-face{
-  width:36px;height:36px;flex-shrink:0;
-  animation:blink 2.8s ease-in-out infinite;
+.thinking-word{
+  animation:thinkFade 1.4s ease-in-out infinite;
+  font-style:italic;
 }
-.thinking-text{
-  display:flex;flex-direction:column;gap:3px;
+.thinking-cursor{
+  display:inline-block;
+  width:2px;height:15px;
+  background:var(--accent);
+  border-radius:1px;
+  margin-left:2px;
+  vertical-align:middle;
+  animation:cursorBlink .8s ease-in-out infinite;
 }
-.thinking-label{font-size:12px;color:var(--text3);font-weight:500;letter-spacing:.02em}
-.thinking-dots{display:flex;gap:5px;align-items:center;margin-top:4px}
-.thinking-dots span{
-  width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.3;
-  animation:think-bounce .9s ease-in-out infinite;
+/* Streaming cursor shown inside bot bubble while text arrives */
+.bub.bot .stream-cursor{
+  display:inline-block;
+  width:2px;height:14px;
+  background:var(--accent);
+  border-radius:1px;
+  margin-left:2px;
+  vertical-align:middle;
+  animation:cursorBlink .8s ease-in-out infinite;
 }
-.thinking-dots span:nth-child(2){animation-delay:.18s}
-.thinking-dots span:nth-child(3){animation-delay:.36s}
+@keyframes cursorBlink{0%,100%{opacity:1}50%{opacity:0}}
+@keyframes thinkFade{0%,100%{opacity:.4}50%{opacity:1}}
 
 /* ── Input zone ── */
 .input-zone{padding:12px 20px 18px;background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
@@ -596,17 +607,7 @@ function addThinking(){
   el.innerHTML = `
     <div class="av bot">B</div>
     <div class="thinking-bub">
-      <svg class="baymax-face" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
-        <circle cx="20" cy="20" r="18" fill="#f5ebe3" stroke="#c96a3a" stroke-width="1.5"/>
-        <ellipse cx="14" cy="19" rx="3.5" ry="3.5" fill="#c96a3a"/>
-        <ellipse cx="26" cy="19" rx="3.5" ry="3.5" fill="#c96a3a"/>
-        <path d="M13 28 Q20 31 27 28" stroke="#c96a3a" stroke-width="1.5" stroke-linecap="round" fill="none"/>
-        <rect x="16" y="18" width="8" height="2" rx="1" fill="#f5ebe3"/>
-      </svg>
-      <div class="thinking-text">
-        <span class="thinking-label">Baymax is thinking</span>
-        <div class="thinking-dots"><span></span><span></span><span></span></div>
-      </div>
+      <span class="thinking-word">Thinking</span><span class="thinking-cursor"></span>
     </div>`;
   thread.appendChild(el);
   threadWrap.scrollTop = threadWrap.scrollHeight;
@@ -685,12 +686,11 @@ async function sendMessage(message){
     const contentType = r.headers.get('content-type')||'';
 
     if(contentType.includes('text/event-stream')){
-      // ── Streaming mode ──
-      // Remove thinking, create empty bot bubble to stream into
+      // ── Streaming: remove thinking, create bot bubble, stream tokens into it ──
       removeThinking();
       const rowEl = document.createElement('div');
       rowEl.className = 'msg-row bot';
-      rowEl.innerHTML = `<div class="av bot">B</div><div class="bub bot" id="stream-bub"></div>`;
+      rowEl.innerHTML = `<div class="av bot">B</div><div class="bub bot" id="stream-bub"><span class="stream-cursor"></span></div>`;
       thread.appendChild(rowEl);
       const bubEl = document.getElementById('stream-bub');
 
@@ -708,21 +708,31 @@ async function sendMessage(message){
             if(raw==='[DONE]') break;
             try{
               const { token } = JSON.parse(raw);
-              if(token){ fullText += token; bubEl.innerHTML = fmt(fullText); threadWrap.scrollTop = threadWrap.scrollHeight; }
+              if(token){
+                fullText += token;
+                // Show text + blinking cursor while streaming
+                bubEl.innerHTML = fmt(fullText) + '<span class="stream-cursor"></span>';
+                threadWrap.scrollTop = threadWrap.scrollHeight;
+              }
             } catch{}
           }
         }
       }
+      // Remove cursor when done
+      bubEl.innerHTML = fmt(fullText);
       conv.messages.push({ role:'assistant', content:fullText });
 
     } else {
-      // ── Non-streaming fallback (JSON response) ──
-      const data = contentType.includes('json') ? await r.json() : await r.text();
+      // ── JSON fallback ──
+      const data  = contentType.includes('json') ? await r.json() : await r.text();
       const reply = parseReply(data);
       removeThinking();
-      const botEl = document.createElement('div');
-      botEl.innerHTML = buildMsg({ role:'assistant', content:reply });
-      thread.appendChild(botEl.firstElementChild);
+      // Create fresh bot row — never reuse existing elements
+      const rowEl = document.createElement('div');
+      rowEl.className = 'msg-row bot';
+      rowEl.style.animation = 'fadeUp .22s var(--ease)';
+      rowEl.innerHTML = `<div class="av bot">B</div><div class="bub bot">${fmt(reply)}</div>`;
+      thread.appendChild(rowEl);
       threadWrap.scrollTop = threadWrap.scrollHeight;
       conv.messages.push({ role:'assistant', content:reply });
     }
@@ -735,9 +745,10 @@ async function sendMessage(message){
     if(errMsg.toLowerCase().includes('fetch')||errMsg==='failed to fetch'){
       errMsg = 'Connection blocked (CORS).\n\nOpen ⚙️ Settings → enable "Use CORS proxy", then try again.';
     }
-    const errEl = document.createElement('div');
-    errEl.innerHTML = buildMsg({ role:'assistant', content:errMsg, err:true });
-    thread.appendChild(errEl.firstElementChild);
+    const rowEl = document.createElement('div');
+    rowEl.className = 'msg-row bot';
+    rowEl.innerHTML = `<div class="av bot">B</div><div class="bub bot err">${fmt(errMsg)}</div>`;
+    thread.appendChild(rowEl);
     threadWrap.scrollTop = threadWrap.scrollHeight;
     conv.messages.push({ role:'assistant', content:errMsg, err:true });
     setStatus('Connection issue','bad');

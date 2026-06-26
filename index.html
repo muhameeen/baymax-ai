@@ -187,38 +187,50 @@ button,input,select,textarea{font-family:var(--font);color:inherit;border:none;b
 }
 .bub.err{border-left-color:#ef4444;background:#fef2f2;color:#b91c1c}
 
-/* ── Thinking indicator (Claude/ChatGPT style) ── */
+/* ── Thinking indicator (Claude style) ── */
 .thinking-wrap{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .22s var(--ease)}
 .thinking-bub{
-  padding:13px 16px;border-radius:var(--r);
+  display:flex;flex-direction:column;gap:8px;
+  padding:14px 18px;border-radius:var(--r);
   background:var(--sb);border:1px solid var(--border);
   border-left:2.5px solid var(--accent);
   box-shadow:0 1px 4px rgba(0,0,0,.05);
-  display:flex;align-items:center;gap:10px;
-  font-family:var(--serif);font-size:14.5px;color:var(--text2);
+  min-width:160px;
 }
-.thinking-word{
-  animation:thinkFade 1.4s ease-in-out infinite;
-  font-style:italic;
+.thinking-cursor-row{
+  display:flex;align-items:center;gap:8px;
 }
 .thinking-cursor{
   display:inline-block;
-  width:2px;height:15px;
+  width:2.5px;height:18px;
   background:var(--accent);
-  border-radius:1px;
-  margin-left:2px;
-  vertical-align:middle;
-  animation:cursorBlink .8s ease-in-out infinite;
+  border-radius:2px;
+  animation:cursorBlink .75s ease-in-out infinite;
+  flex-shrink:0;
 }
-/* Streaming cursor shown inside bot bubble while text arrives */
-.bub.bot .stream-cursor{
-  display:inline-block;
-  width:2px;height:14px;
-  background:var(--accent);
-  border-radius:1px;
-  margin-left:2px;
-  vertical-align:middle;
-  animation:cursorBlink .8s ease-in-out infinite;
+.thinking-label{
+  font-size:13px;color:var(--text2);
+  font-family:var(--font);font-weight:500;
+  letter-spacing:.01em;
+}
+.thinking-sub{
+  display:flex;align-items:center;gap:6px;
+  font-size:12px;color:var(--text3);font-family:var(--font);
+}
+.thinking-dots{display:flex;gap:4px;align-items:center}
+.thinking-dots span{
+  width:4px;height:4px;border-radius:50%;
+  background:var(--accent);opacity:.35;
+  animation:think-bounce .9s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(2){animation-delay:.2s}
+.thinking-dots span:nth-child(3){animation-delay:.4s}
+/* Streaming cursor inside bot bubble */
+.stream-cursor{
+  display:inline-block;width:2px;height:14px;
+  background:var(--accent);border-radius:1px;
+  margin-left:2px;vertical-align:middle;
+  animation:cursorBlink .75s ease-in-out infinite;
 }
 @keyframes cursorBlink{0%,100%{opacity:1}50%{opacity:0}}
 @keyframes thinkFade{0%,100%{opacity:.4}50%{opacity:1}}
@@ -607,7 +619,14 @@ function addThinking(){
   el.innerHTML = `
     <div class="av bot">B</div>
     <div class="thinking-bub">
-      <span class="thinking-word">Thinking</span><span class="thinking-cursor"></span>
+      <div class="thinking-cursor-row">
+        <div class="thinking-cursor"></div>
+        <span class="thinking-label">Thinking</span>
+      </div>
+      <div class="thinking-sub">
+        <div class="thinking-dots"><span></span><span></span><span></span></div>
+        <span>Baymax is preparing a response</span>
+      </div>
     </div>`;
   thread.appendChild(el);
   threadWrap.scrollTop = threadWrap.scrollHeight;
@@ -615,6 +634,23 @@ function addThinking(){
 function removeThinking(){
   const el = document.getElementById('thinking');
   if(el) el.remove();
+}
+
+function appendBotRow(content, isErr){
+  const row = document.createElement('div');
+  row.className = 'msg-row bot';
+  row.style.cssText = 'animation:fadeUp .22s cubic-bezier(.4,0,.2,1)';
+  const bub = document.createElement('div');
+  bub.className = 'bub bot' + (isErr ? ' err' : '');
+  bub.innerHTML = fmt(content);
+  const av = document.createElement('div');
+  av.className = 'av bot';
+  av.textContent = 'B';
+  row.appendChild(av);
+  row.appendChild(bub);
+  thread.appendChild(row);
+  threadWrap.scrollTop = threadWrap.scrollHeight;
+  return bub;
 }
 
 // ──────────────────────────────────────────────
@@ -652,10 +688,16 @@ async function sendMessage(message){
   conv.ts = Date.now();
   saveConvs();
 
-  // Append user bubble immediately
-  const userEl = document.createElement('div');
-  userEl.innerHTML = buildMsg({ role:'user', content:message });
-  thread.appendChild(userEl.firstElementChild);
+  // Append user bubble immediately — build DOM directly, no innerHTML tricks
+  const userRow = document.createElement('div');
+  userRow.className = 'msg-row user';
+  userRow.style.cssText = 'animation:fadeUp .22s cubic-bezier(.4,0,.2,1)';
+  const userAv = document.createElement('div');
+  userAv.className = 'av user'; userAv.textContent = 'You';
+  const userBub = document.createElement('div');
+  userBub.className = 'bub user'; userBub.innerHTML = fmt(message);
+  userRow.appendChild(userAv); userRow.appendChild(userBub);
+  thread.appendChild(userRow);
   threadWrap.scrollTop = threadWrap.scrollHeight;
 
   busy = true; sendBtn.disabled = true;
@@ -686,54 +728,45 @@ async function sendMessage(message){
     const contentType = r.headers.get('content-type')||'';
 
     if(contentType.includes('text/event-stream')){
-      // ── Streaming: remove thinking, create bot bubble, stream tokens into it ──
+      // Streaming — remove thinking, create fresh row, stream tokens in
       removeThinking();
-      const rowEl = document.createElement('div');
-      rowEl.className = 'msg-row bot';
-      rowEl.innerHTML = `<div class="av bot">B</div><div class="bub bot" id="stream-bub"><span class="stream-cursor"></span></div>`;
-      thread.appendChild(rowEl);
-      const bubEl = document.getElementById('stream-bub');
+      const row = document.createElement('div');
+      row.className = 'msg-row bot';
+      const av  = document.createElement('div');
+      av.className = 'av bot'; av.textContent = 'B';
+      const bub = document.createElement('div');
+      bub.className = 'bub bot';
+      bub.innerHTML = '<span class="stream-cursor"></span>';
+      row.appendChild(av); row.appendChild(bub);
+      thread.appendChild(row);
+      threadWrap.scrollTop = threadWrap.scrollHeight;
 
       const reader  = r.body.getReader();
       const decoder = new TextDecoder();
       let fullText  = '';
-
       while(true){
         const { done, value } = await reader.read();
         if(done) break;
-        const lines = decoder.decode(value).split('\n');
-        for(const line of lines){
+        for(const line of decoder.decode(value).split('\n')){
           if(line.startsWith('data: ')){
             const raw = line.slice(6).trim();
             if(raw==='[DONE]') break;
             try{
               const { token } = JSON.parse(raw);
-              if(token){
-                fullText += token;
-                // Show text + blinking cursor while streaming
-                bubEl.innerHTML = fmt(fullText) + '<span class="stream-cursor"></span>';
-                threadWrap.scrollTop = threadWrap.scrollHeight;
-              }
-            } catch{}
+              if(token){ fullText+=token; bub.innerHTML=fmt(fullText)+'<span class="stream-cursor"></span>'; threadWrap.scrollTop=threadWrap.scrollHeight; }
+            }catch{}
           }
         }
       }
-      // Remove cursor when done
-      bubEl.innerHTML = fmt(fullText);
+      bub.innerHTML = fmt(fullText);
       conv.messages.push({ role:'assistant', content:fullText });
 
     } else {
-      // ── JSON fallback ──
+      // JSON fallback
       const data  = contentType.includes('json') ? await r.json() : await r.text();
       const reply = parseReply(data);
       removeThinking();
-      // Create fresh bot row — never reuse existing elements
-      const rowEl = document.createElement('div');
-      rowEl.className = 'msg-row bot';
-      rowEl.style.animation = 'fadeUp .22s var(--ease)';
-      rowEl.innerHTML = `<div class="av bot">B</div><div class="bub bot">${fmt(reply)}</div>`;
-      thread.appendChild(rowEl);
-      threadWrap.scrollTop = threadWrap.scrollHeight;
+      appendBotRow(reply, false);
       conv.messages.push({ role:'assistant', content:reply });
     }
 
@@ -745,11 +778,7 @@ async function sendMessage(message){
     if(errMsg.toLowerCase().includes('fetch')||errMsg==='failed to fetch'){
       errMsg = 'Connection blocked (CORS).\n\nOpen ⚙️ Settings → enable "Use CORS proxy", then try again.';
     }
-    const rowEl = document.createElement('div');
-    rowEl.className = 'msg-row bot';
-    rowEl.innerHTML = `<div class="av bot">B</div><div class="bub bot err">${fmt(errMsg)}</div>`;
-    thread.appendChild(rowEl);
-    threadWrap.scrollTop = threadWrap.scrollHeight;
+    appendBotRow(errMsg, true);
     conv.messages.push({ role:'assistant', content:errMsg, err:true });
     setStatus('Connection issue','bad');
   }

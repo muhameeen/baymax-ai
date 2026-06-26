@@ -663,82 +663,87 @@ async function sendMessage(message){
 
   try {
     const path  = cfgEp.value;
-    const base  = cfgUrl.value.replace(/\/+$/, '');
-    const dest  = base + (path === '/' ? '' : path);
+    const base  = cfgUrl.value.replace(/\/+$/,'');
+    const dest  = base + (path==='/'?'':path);
     const url   = cfgProxy.checked ? 'https://corsproxy.io/?' + encodeURIComponent(dest) : dest;
 
     const body = {
-        path, message, prompt: message,
-        messages: conv.messages.map(m => ({ role: m.role, content: m.content }))
+      path    : path,
+      message : message,
+      prompt  : message,
+      messages: conv.messages.map(m=>({ role:m.role, content:m.content }))
     };
 
     const r = await fetch(url, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true'
-        },
-        body: JSON.stringify(body)
+      method : 'POST',
+      headers: { 'Content-Type':'application/json', 'ngrok-skip-browser-warning':'true' },
+      body   : JSON.stringify(body)
     });
 
-    if (!r.ok) throw new Error(r.statusText);
+    if(!r.ok) throw new Error(r.statusText);
 
-    // Create bot bubble early — we'll stream into it
-    removeThinking();
-    const botBub = document.createElement('div');
-    botBub.innerHTML = `<div class="msg-row bot">
-        <div class="av bot">B</div>
-        <div class="bub bot" id="streaming-bub"></div>
-    </div>`;
-    thread.appendChild(botBub.firstElementChild);
-    const bubEl = document.getElementById('streaming-bub');
+    const contentType = r.headers.get('content-type')||'';
 
-    // Read the stream
-    const reader = r.body.getReader();
-    const decoder = new TextDecoder();
-    let fullText = '';
+    if(contentType.includes('text/event-stream')){
+      // ── Streaming mode ──
+      // Remove thinking, create empty bot bubble to stream into
+      removeThinking();
+      const rowEl = document.createElement('div');
+      rowEl.className = 'msg-row bot';
+      rowEl.innerHTML = `<div class="av bot">B</div><div class="bub bot" id="stream-bub"></div>`;
+      thread.appendChild(rowEl);
+      const bubEl = document.getElementById('stream-bub');
 
-    while (true) {
+      const reader  = r.body.getReader();
+      const decoder = new TextDecoder();
+      let fullText  = '';
+
+      while(true){
         const { done, value } = await reader.read();
-        if (done) break;
-
+        if(done) break;
         const lines = decoder.decode(value).split('\n');
-        for (const line of lines) {
-            if (line.startsWith('data: ')) {
-                const data = line.slice(6);
-                if (data === '[DONE]') break;
-                try {
-                    const { token } = JSON.parse(data);
-                    fullText += token;
-                    bubEl.innerHTML = fmt(fullText);
-                    threadWrap.scrollTop = threadWrap.scrollHeight;
-                } catch {}
-            }
+        for(const line of lines){
+          if(line.startsWith('data: ')){
+            const raw = line.slice(6).trim();
+            if(raw==='[DONE]') break;
+            try{
+              const { token } = JSON.parse(raw);
+              if(token){ fullText += token; bubEl.innerHTML = fmt(fullText); threadWrap.scrollTop = threadWrap.scrollHeight; }
+            } catch{}
+          }
         }
+      }
+      conv.messages.push({ role:'assistant', content:fullText });
+
+    } else {
+      // ── Non-streaming fallback (JSON response) ──
+      const data = contentType.includes('json') ? await r.json() : await r.text();
+      const reply = parseReply(data);
+      removeThinking();
+      const botEl = document.createElement('div');
+      botEl.innerHTML = buildMsg({ role:'assistant', content:reply });
+      thread.appendChild(botEl.firstElementChild);
+      threadWrap.scrollTop = threadWrap.scrollHeight;
+      conv.messages.push({ role:'assistant', content:reply });
     }
 
-    conv.messages.push({ role: 'assistant', content: fullText });
-    setStatus('Connected', 'ok');
+    setStatus('Connected','ok');
 
-} catch(e) {
+  } catch(e){
     removeThinking();
-    let errMsg = e.message || String(e);
-    if (errMsg.toLowerCase().includes('fetch') || errMsg === 'failed to fetch') {
-        errMsg = 'Connection blocked (CORS).\n\nOpen ⚙️ Settings → enable "Use CORS proxy".';
+    let errMsg = e.message||String(e);
+    if(errMsg.toLowerCase().includes('fetch')||errMsg==='failed to fetch'){
+      errMsg = 'Connection blocked (CORS).\n\nOpen ⚙️ Settings → enable "Use CORS proxy", then try again.';
     }
-    conv.messages.push({ role: 'assistant', content: errMsg, err: true });
-    setStatus('Connection issue', 'bad');
-}
+    const errEl = document.createElement('div');
+    errEl.innerHTML = buildMsg({ role:'assistant', content:errMsg, err:true });
+    thread.appendChild(errEl.firstElementChild);
+    threadWrap.scrollTop = threadWrap.scrollHeight;
+    conv.messages.push({ role:'assistant', content:errMsg, err:true });
+    setStatus('Connection issue','bad');
+  }
+
   saveConvs();
-  removeThinking();
-
-  // Append bot reply with animation
-  const last = conv.messages[conv.messages.length-1];
-  const botEl = document.createElement('div');
-  botEl.innerHTML = buildMsg(last);
-  thread.appendChild(botEl.firstElementChild);
-  threadWrap.scrollTop = threadWrap.scrollHeight;
-
   busy=false; sendBtn.disabled=!msgInput.value.trim(); msgInput.focus();
   renderHist();
 }

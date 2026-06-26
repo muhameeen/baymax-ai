@@ -160,7 +160,7 @@ button,input,select,textarea{font-family:var(--font);color:inherit;border:none;b
 .chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);transform:translateY(-1px)}
 
 /* ── Messages ── */
-.msg-row{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .22s var(--ease)}
+.msg-row{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .22s var(--ease);position:relative}
 .msg-row.user{flex-direction:row-reverse}
 .av{
   width:28px;height:28px;border-radius:9px;flex-shrink:0;
@@ -187,18 +187,23 @@ button,input,select,textarea{font-family:var(--font);color:inherit;border:none;b
 }
 .bub.err{border-left-color:#ef4444;background:#fef2f2;color:#b91c1c}
 
-/* ── Thinking indicator (Claude style) ── */
+/* ── Message group wrapper (bub + actions) ── */
+.msg-body{display:flex;flex-direction:column;gap:0;max-width:min(520px,78vw)}
+.msg-row.user .msg-body{align-items:flex-end}
+.msg-row.bot .msg-body{align-items:flex-start}
+.msg-body .bub{max-width:100%}
+
+/* ── Thinking indicator ── */
 .thinking-wrap{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .22s var(--ease)}
+.thinking-wrap.fade-out{animation:fadeOut .25s var(--ease) forwards}
 .thinking-bub{
-  display:flex;flex-direction:column;gap:8px;
-  padding:14px 18px;border-radius:var(--r);
+  padding:12px 16px;border-radius:var(--r);
   background:var(--sb);border:1px solid var(--border);
   border-left:2.5px solid var(--accent);
   box-shadow:0 1px 4px rgba(0,0,0,.05);
-  min-width:160px;
-}
-.thinking-cursor-row{
-  display:flex;align-items:center;gap:8px;
+  min-width:80px;
+  display:flex;align-items:center;justify-content:flex-start;
+  min-height:46px;
 }
 .thinking-cursor{
   display:inline-block;
@@ -206,34 +211,69 @@ button,input,select,textarea{font-family:var(--font);color:inherit;border:none;b
   background:var(--accent);
   border-radius:2px;
   animation:cursorBlink .75s ease-in-out infinite;
-  flex-shrink:0;
+}
+.thinking-label-row{
+  display:flex;align-items:center;gap:6px;
+  margin-top:6px;
+  padding-left:2px;
 }
 .thinking-label{
-  font-size:13px;color:var(--text2);
-  font-family:var(--font);font-weight:500;
-  letter-spacing:.01em;
+  font-size:12px;color:var(--text3);
+  font-family:var(--font);font-weight:400;
 }
-.thinking-sub{
-  display:flex;align-items:center;gap:6px;
-  font-size:12px;color:var(--text3);font-family:var(--font);
-}
-.thinking-dots{display:flex;gap:4px;align-items:center}
+.thinking-dots{display:flex;gap:3px;align-items:center}
 .thinking-dots span{
-  width:4px;height:4px;border-radius:50%;
-  background:var(--accent);opacity:.35;
+  width:3.5px;height:3.5px;border-radius:50%;
+  background:var(--accent);opacity:.4;
   animation:think-bounce .9s ease-in-out infinite;
 }
 .thinking-dots span:nth-child(2){animation-delay:.2s}
 .thinking-dots span:nth-child(3){animation-delay:.4s}
-/* Streaming cursor inside bot bubble */
+
+/* ── Streaming cursor inside bot bubble ── */
 .stream-cursor{
   display:inline-block;width:2px;height:14px;
   background:var(--accent);border-radius:1px;
   margin-left:2px;vertical-align:middle;
   animation:cursorBlink .75s ease-in-out infinite;
 }
-@keyframes cursorBlink{0%,100%{opacity:1}50%{opacity:0}}
-@keyframes thinkFade{0%,100%{opacity:.4}50%{opacity:1}}
+
+/* ── Message Actions (hover menu) ── */
+.msg-actions{
+  display:flex;align-items:center;gap:2px;
+  padding:2px 4px;
+  opacity:0;
+  transition:opacity .18s var(--ease),transform .18s var(--ease);
+  transform:translateY(2px);
+  pointer-events:none;
+  margin-top:4px;
+}
+.msg-row:hover .msg-actions,
+.msg-actions:focus-within{
+  opacity:1;transform:translateY(0);pointer-events:auto;
+}
+.act-btn{
+  display:flex;align-items:center;gap:5px;
+  padding:4px 8px;border-radius:6px;
+  font-size:12px;color:var(--text3);
+  transition:all .14s;cursor:pointer;
+  white-space:nowrap;
+}
+.act-btn:hover{background:var(--s2);color:var(--text2)}
+.act-btn svg{width:13px;height:13px;flex-shrink:0}
+.act-btn.danger:hover{background:#fef2f2;color:#dc2626}
+.act-btn.copied{color:var(--accent)}
+
+/* ── Edit mode ── */
+.edit-area{
+  width:100%;min-width:200px;max-width:min(520px,78vw);
+  background:var(--user-bg);color:var(--user-text);
+  border:1.5px solid var(--accent);border-radius:var(--r);
+  padding:12px 16px;font-size:14px;line-height:1.68;resize:none;
+  font-family:var(--font);overflow-y:auto;min-height:46px;max-height:240px;
+}
+.edit-area:focus{outline:none}
+.edit-hint{font-size:11px;color:var(--text3);margin-top:4px;padding-left:2px}
 
 /* ── Input zone ── */
 .input-zone{padding:12px 20px 18px;background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
@@ -309,12 +349,22 @@ button,input,select,textarea{font-family:var(--font);color:inherit;border:none;b
 
 /* ── Keyframes ── */
 @keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes fadeOut{from{opacity:1;transform:translateY(0)}to{opacity:0;transform:translateY(4px)}}
 @keyframes slideInBot{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
 @keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
 @keyframes blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.15)}}
 @keyframes pulse-anim{0%,100%{opacity:1}50%{opacity:.35}}
 @keyframes think-bounce{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-6px);opacity:1}}
 @keyframes pop-in{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+@keyframes cursorBlink{0%,100%{opacity:1}50%{opacity:0}}
+
+/* ── Toggle ── */
+.toggle-wrap{display:flex;align-items:center;cursor:pointer;flex-shrink:0}
+.toggle-wrap input{display:none}
+.toggle-track{width:40px;height:22px;border-radius:11px;background:var(--border2);position:relative;transition:background .2s;flex-shrink:0;border:1px solid var(--border2)}
+.toggle-wrap input:checked + .toggle-track{background:var(--accent);border-color:var(--accent)}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.toggle-wrap input:checked + .toggle-track .toggle-thumb{transform:translateX(18px)}
 
 /* ── Mobile ── */
 @media(max-width:680px){
@@ -325,15 +375,10 @@ button,input,select,textarea{font-family:var(--font);color:inherit;border:none;b
   .thread{padding:16px 12px 8px}
   .input-zone{padding:10px 12px 14px}
   .bub{max-width:88vw}
+  .msg-body{max-width:88vw}
   .sp{width:min(300px,90vw)}
 }
 @media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
-.toggle-wrap{display:flex;align-items:center;cursor:pointer;flex-shrink:0}
-.toggle-wrap input{display:none}
-.toggle-track{width:40px;height:22px;border-radius:11px;background:var(--border2);position:relative;transition:background .2s;flex-shrink:0;border:1px solid var(--border2)}
-.toggle-wrap input:checked + .toggle-track{background:var(--accent);border-color:var(--accent)}
-.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
-.toggle-wrap input:checked + .toggle-track .toggle-thumb{transform:translateX(18px)}
 </style>
 </head>
 <body>
@@ -376,7 +421,8 @@ button,input,select,textarea{font-family:var(--font);color:inherit;border:none;b
     </div>
     <div class="topbar-r">
       <button class="icon-btn" id="clear-btn" title="Clear chat">
-        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+        <!-- Heroicon: TrashIcon outline -->
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
       </button>
     </div>
   </div>
@@ -448,6 +494,17 @@ button,input,select,textarea{font-family:var(--font);color:inherit;border:none;b
 
 <script>
 // ──────────────────────────────────────────────
+// Heroicons (inline SVG strings)
+// ──────────────────────────────────────────────
+const ICONS = {
+  copy: `<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 17.25v3.375c0 .621-.504 1.125-1.125 1.125h-9.75a1.125 1.125 0 0 1-1.125-1.125V7.875c0-.621.504-1.125 1.125-1.125H6.75a9.06 9.06 0 0 1 1.5.124m7.5 10.376h3.375c.621 0 1.125-.504 1.125-1.125V11.25c0-4.46-3.243-8.161-7.5-8.876a9.06 9.06 0 0 0-1.5-.124H9.375c-.621 0-1.125.504-1.125 1.125v3.5m7.5 10.375H9.375a1.125 1.125 0 0 1-1.125-1.125v-9.25m12 6.625v-1.875a3.375 3.375 0 0 0-3.375-3.375h-1.5a1.125 1.125 0 0 1-1.125-1.125v-1.5a3.375 3.375 0 0 0-3.375-3.375H9.75"/></svg>`,
+  regen: `<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99"/></svg>`,
+  edit: `<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m16.862 4.487 1.687-1.688a1.875 1.875 0 1 1 2.652 2.652L10.582 16.07a4.5 4.5 0 0 1-1.897 1.13L6 18l.8-2.685a4.5 4.5 0 0 1 1.13-1.897l8.932-8.931Zm0 0L19.5 7.125M18 14v4.75A2.25 2.25 0 0 1 15.75 21H5.25A2.25 2.25 0 0 1 3 18.75V8.25A2.25 2.25 0 0 1 5.25 6H10"/></svg>`,
+  trash: `<svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m14.74 9-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>`,
+  check: `<svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="m4.5 12.75 6 6 9-13.5"/></svg>`
+};
+
+// ──────────────────────────────────────────────
 // State
 // ──────────────────────────────────────────────
 let convs = {};
@@ -492,7 +549,7 @@ function loadSettings(){
 }
 
 // ──────────────────────────────────────────────
-// Converation persistence
+// Conversation persistence
 // ──────────────────────────────────────────────
 function saveConvs(){ localStorage.setItem(CKEY, JSON.stringify(convs)); }
 function loadConvs(){
@@ -585,7 +642,11 @@ function renderThread(){
     }
     return;
   }
-  thread.innerHTML = c.messages.map(m=>buildMsg(m)).join('');
+  thread.innerHTML = '';
+  c.messages.forEach((m, idx) => {
+    const row = buildMsgRow(m, idx);
+    thread.appendChild(row);
+  });
   threadWrap.scrollTop = threadWrap.scrollHeight;
 }
 
@@ -605,52 +666,246 @@ function buildWelcome(){
   </div>`;
 }
 
-function buildMsg(m){
-  const bot = m.role==='assistant';
-  return `<div class="msg-row ${bot?'bot':'user'}">
-    <div class="av ${bot?'bot':'user'}">${bot?'B':'You'}</div>
-    <div class="bub ${bot?'bot':'user'}${m.err?' err':''}">${fmt(m.content)}</div>
-  </div>`;
-}
-
-function addThinking(){
-  const el = document.createElement('div');
-  el.className = 'thinking-wrap'; el.id = 'thinking';
-  el.innerHTML = `
-    <div class="av bot">B</div>
-    <div class="thinking-bub">
-      <div class="thinking-cursor-row">
-        <div class="thinking-cursor"></div>
-        <span class="thinking-label">Thinking</span>
-      </div>
-      <div class="thinking-sub">
-        <div class="thinking-dots"><span></span><span></span><span></span></div>
-        <span>Baymax is preparing a response</span>
-      </div>
-    </div>`;
-  thread.appendChild(el);
-  threadWrap.scrollTop = threadWrap.scrollHeight;
-}
-function removeThinking(){
-  const el = document.getElementById('thinking');
-  if(el) el.remove();
-}
-
-function appendBotRow(content, isErr){
+// Build a full message row DOM node (with actions)
+function buildMsgRow(m, idx){
+  const bot = m.role === 'assistant';
   const row = document.createElement('div');
-  row.className = 'msg-row bot';
-  row.style.cssText = 'animation:fadeUp .22s cubic-bezier(.4,0,.2,1)';
-  const bub = document.createElement('div');
-  bub.className = 'bub bot' + (isErr ? ' err' : '');
-  bub.innerHTML = fmt(content);
+  row.className = 'msg-row ' + (bot ? 'bot' : 'user');
+  row.dataset.idx = idx;
+
+  // Avatar
   const av = document.createElement('div');
-  av.className = 'av bot';
-  av.textContent = 'B';
-  row.appendChild(av);
-  row.appendChild(bub);
-  thread.appendChild(row);
+  av.className = 'av ' + (bot ? 'bot' : 'user');
+  av.textContent = bot ? 'B' : 'You';
+
+  // Message body wrapper (bubble + actions)
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  // Bubble
+  const bub = document.createElement('div');
+  bub.className = 'bub ' + (bot ? 'bot' : 'user') + (m.err ? ' err' : '');
+  bub.innerHTML = fmt(m.content);
+
+  // Actions bar
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+
+  if(bot){
+    // Copy button
+    const copyBtn = makeActBtn(ICONS.copy, 'Copy', () => copyMessage(m.content, copyBtn));
+    // Regenerate button
+    const regenBtn = makeActBtn(ICONS.regen, 'Regenerate', () => regenerateFrom(idx));
+    // Delete button
+    const delBtn = makeActBtn(ICONS.trash, 'Delete', () => deleteMsg(idx), true);
+    actions.appendChild(copyBtn);
+    actions.appendChild(regenBtn);
+    actions.appendChild(delBtn);
+  } else {
+    // Edit button
+    const editBtn = makeActBtn(ICONS.edit, 'Edit', () => startEdit(row, idx, m, bub, actions, editBtn));
+    // Delete button
+    const delBtn = makeActBtn(ICONS.trash, 'Delete', () => deleteMsg(idx), true);
+    actions.appendChild(editBtn);
+    actions.appendChild(delBtn);
+  }
+
+  body.appendChild(bub);
+  body.appendChild(actions);
+
+  if(bot){
+    row.appendChild(av);
+    row.appendChild(body);
+  } else {
+    row.appendChild(av);
+    row.appendChild(body);
+  }
+
+  return row;
+}
+
+function makeActBtn(iconSvg, label, onClick, isDanger=false){
+  const btn = document.createElement('button');
+  btn.className = 'act-btn' + (isDanger ? ' danger' : '');
+  btn.innerHTML = iconSvg + `<span>${label}</span>`;
+  btn.addEventListener('click', onClick);
+  return btn;
+}
+
+// ──────────────────────────────────────────────
+// Copy action
+// ──────────────────────────────────────────────
+function copyMessage(content, btn){
+  navigator.clipboard.writeText(content).then(()=>{
+    const span = btn.querySelector('span');
+    const origIcon = btn.innerHTML;
+    btn.innerHTML = ICONS.check + '<span>Copied</span>';
+    btn.classList.add('copied');
+    setTimeout(()=>{
+      btn.innerHTML = origIcon;
+      btn.classList.remove('copied');
+    }, 2000);
+  }).catch(()=>{
+    // Fallback for older browsers
+    const ta = document.createElement('textarea');
+    ta.value = content; ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select(); document.execCommand('copy');
+    document.body.removeChild(ta);
+    const span = btn.querySelector('span');
+    const orig = btn.innerHTML;
+    btn.innerHTML = ICONS.check + '<span>Copied</span>';
+    btn.classList.add('copied');
+    setTimeout(()=>{ btn.innerHTML = orig; btn.classList.remove('copied'); }, 2000);
+  });
+}
+
+// ──────────────────────────────────────────────
+// Delete message action
+// ──────────────────────────────────────────────
+function deleteMsg(idx){
+  if(!activeId) return;
+  const conv = convs[activeId];
+  const m = conv.messages[idx];
+  if(!m) return;
+
+  if(m.role === 'assistant'){
+    // Delete only this assistant message
+    conv.messages.splice(idx, 1);
+  } else {
+    // Delete user message + the immediately following assistant reply (if any)
+    const toRemove = conv.messages[idx+1]?.role === 'assistant' ? 2 : 1;
+    conv.messages.splice(idx, toRemove);
+  }
+  saveConvs();
+  renderThread();
+}
+
+// ──────────────────────────────────────────────
+// Regenerate action
+// ──────────────────────────────────────────────
+function regenerateFrom(assistantIdx){
+  if(!activeId || busy) return;
+  const conv = convs[activeId];
+  // Find the preceding user message
+  let userMsg = null;
+  for(let i = assistantIdx - 1; i >= 0; i--){
+    if(conv.messages[i].role === 'user'){ userMsg = conv.messages[i].content; break; }
+  }
+  if(!userMsg) return;
+  // Remove the assistant message at assistantIdx
+  conv.messages.splice(assistantIdx, 1);
+  saveConvs();
+  renderThread();
+  // Re-request with same user message (history already has the user msg)
+  streamResponse(userMsg, true);
+}
+
+// ──────────────────────────────────────────────
+// Edit user message
+// ──────────────────────────────────────────────
+function startEdit(row, idx, m, bub, actionsEl, editBtn){
+  if(busy) return;
+  // Replace bubble with textarea
+  const ta = document.createElement('textarea');
+  ta.className = 'edit-area';
+  ta.value = m.content;
+  const hint = document.createElement('div');
+  hint.className = 'edit-hint';
+  hint.textContent = 'Enter to save · Esc to cancel';
+
+  bub.replaceWith(ta);
+  actionsEl.style.display = 'none';
+
+  const body = row.querySelector('.msg-body');
+  body.insertBefore(hint, actionsEl);
+
+  // Auto-resize
+  ta.style.height = 'auto';
+  ta.style.height = Math.min(ta.scrollHeight, 240) + 'px';
+  ta.focus();
+  ta.selectionStart = ta.selectionEnd = ta.value.length;
+
+  function saveEdit(){
+    const newContent = ta.value.trim();
+    if(!newContent){ cancelEdit(); return; }
+    m.content = newContent;
+    // Truncate everything after this user message
+    const conv = convs[activeId];
+    conv.messages = conv.messages.slice(0, idx + 1);
+    conv.messages[idx].content = newContent;
+    saveConvs();
+    renderThread();
+    // Re-generate from here
+    streamResponse(newContent, true);
+  }
+
+  function cancelEdit(){
+    ta.replaceWith(bub);
+    hint.remove();
+    actionsEl.style.display = '';
+  }
+
+  ta.addEventListener('keydown', e => {
+    if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); saveEdit(); }
+    if(e.key === 'Escape'){ cancelEdit(); }
+  });
+  ta.addEventListener('input', () => {
+    ta.style.height = 'auto';
+    ta.style.height = Math.min(ta.scrollHeight, 240) + 'px';
+  });
+}
+
+// ──────────────────────────────────────────────
+// Thinking indicator
+// ──────────────────────────────────────────────
+function addThinking(){
+  removeThinking();
+  const wrap = document.createElement('div');
+  wrap.className = 'thinking-wrap'; wrap.id = 'thinking';
+
+  const av = document.createElement('div');
+  av.className = 'av bot'; av.textContent = 'B';
+
+  const col = document.createElement('div');
+  col.style.cssText = 'display:flex;flex-direction:column;gap:0';
+
+  const bub = document.createElement('div');
+  bub.className = 'thinking-bub';
+
+  const cursor = document.createElement('span');
+  cursor.className = 'thinking-cursor';
+  bub.appendChild(cursor);
+
+  const labelRow = document.createElement('div');
+  labelRow.className = 'thinking-label-row';
+
+  const dots = document.createElement('div');
+  dots.className = 'thinking-dots';
+  dots.innerHTML = '<span></span><span></span><span></span>';
+
+  const lbl = document.createElement('span');
+  lbl.className = 'thinking-label';
+  lbl.textContent = 'Thinking';
+
+  labelRow.appendChild(lbl);
+  labelRow.appendChild(dots);
+
+  col.appendChild(bub);
+  col.appendChild(labelRow);
+
+  wrap.appendChild(av);
+  wrap.appendChild(col);
+  thread.appendChild(wrap);
   threadWrap.scrollTop = threadWrap.scrollHeight;
-  return bub;
+}
+
+function removeThinking(){ const el = document.getElementById('thinking'); if(el) el.remove(); }
+
+function fadeOutThinking(cb){
+  const el = document.getElementById('thinking');
+  if(!el){ cb(); return; }
+  el.classList.add('fade-out');
+  setTimeout(()=>{ el.remove(); cb(); }, 240);
 }
 
 // ──────────────────────────────────────────────
@@ -664,45 +919,87 @@ function dismissWelcome(){
 }
 
 // ──────────────────────────────────────────────
-// API call — exactly as the original working code
+// Append a finished bot row (non-streaming)
 // ──────────────────────────────────────────────
-async function sendMessage(message){
-  message = message.trim();
-  if(!message || busy) return;
-
-  // Dismiss welcome screen
-  dismissWelcome();
-  welcomeShown = false;
-
-  // Create conversation if needed
-  if(!activeId){
-    const id = 'c'+Date.now();
-    convs[id] = { id, title: message.slice(0,38)+(message.length>38?'…':''), messages:[], ts:Date.now() };
-    activeId = id; saveConvs(); renderHist();
-    convTitle.textContent = convs[id].title;
-  }
-
+function appendBotRow(content, isErr){
   const conv = convs[activeId];
-  if(conv.messages.length===0) conv.title = message.slice(0,38)+(message.length>38?'…':'');
-  conv.messages.push({ role:'user', content:message });
-  conv.ts = Date.now();
-  saveConvs();
+  const idx = conv.messages.length - 1; // will be appended by caller
+  const row = document.createElement('div');
+  row.className = 'msg-row bot';
+  row.dataset.idx = idx;
+  row.style.cssText = 'animation:fadeUp .22s cubic-bezier(.4,0,.2,1)';
 
-  // Append user bubble immediately — build DOM directly, no innerHTML tricks
-  const userRow = document.createElement('div');
-  userRow.className = 'msg-row user';
-  userRow.style.cssText = 'animation:fadeUp .22s cubic-bezier(.4,0,.2,1)';
-  const userAv = document.createElement('div');
-  userAv.className = 'av user'; userAv.textContent = 'You';
-  const userBub = document.createElement('div');
-  userBub.className = 'bub user'; userBub.innerHTML = fmt(message);
-  userRow.appendChild(userAv); userRow.appendChild(userBub);
-  thread.appendChild(userRow);
+  const av = document.createElement('div');
+  av.className = 'av bot'; av.textContent = 'B';
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  const bub = document.createElement('div');
+  bub.className = 'bub bot' + (isErr ? ' err' : '');
+  bub.innerHTML = fmt(content);
+
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+  const copyBtn = makeActBtn(ICONS.copy, 'Copy', ()=>copyMessage(content, copyBtn));
+  const regenBtn = makeActBtn(ICONS.regen, 'Regenerate', ()=>regenerateFrom(idx));
+  const delBtn = makeActBtn(ICONS.trash, 'Delete', ()=>deleteMsg(idx), true);
+  actions.appendChild(copyBtn); actions.appendChild(regenBtn); actions.appendChild(delBtn);
+
+  body.appendChild(bub); body.appendChild(actions);
+  row.appendChild(av); row.appendChild(body);
+  thread.appendChild(row);
   threadWrap.scrollTop = threadWrap.scrollHeight;
+  return bub;
+}
 
+// ──────────────────────────────────────────────
+// Append a user bubble to DOM (live, during send)
+// ──────────────────────────────────────────────
+function appendUserRow(message, msgIdx){
+  const row = document.createElement('div');
+  row.className = 'msg-row user';
+  row.dataset.idx = msgIdx;
+  row.style.cssText = 'animation:fadeUp .22s cubic-bezier(.4,0,.2,1)';
+
+  const av = document.createElement('div');
+  av.className = 'av user'; av.textContent = 'You';
+
+  const body = document.createElement('div');
+  body.className = 'msg-body';
+
+  const bub = document.createElement('div');
+  bub.className = 'bub user';
+  bub.innerHTML = fmt(message);
+
+  // User actions (edit + delete)
+  const actions = document.createElement('div');
+  actions.className = 'msg-actions';
+
+  // We need to wire edit/delete after the row is in the DOM so idx is known
+  const editBtn = makeActBtn(ICONS.edit, 'Edit', ()=>{
+    const m = convs[activeId]?.messages[msgIdx];
+    if(m) startEdit(row, msgIdx, m, bub, actions, editBtn);
+  });
+  const delBtn = makeActBtn(ICONS.trash, 'Delete', ()=>deleteMsg(msgIdx), true);
+  actions.appendChild(editBtn); actions.appendChild(delBtn);
+
+  body.appendChild(bub); body.appendChild(actions);
+  row.appendChild(av); row.appendChild(body);
+  thread.appendChild(row);
+  threadWrap.scrollTop = threadWrap.scrollHeight;
+}
+
+// ──────────────────────────────────────────────
+// Core streaming logic (extracted for reuse)
+// ──────────────────────────────────────────────
+async function streamResponse(message, skipUserBubble=false){
+  if(busy) return;
   busy = true; sendBtn.disabled = true;
   setStatus('Connecting…','wait');
   addThinking();
+
+  const conv = convs[activeId];
 
   try {
     const path  = cfgEp.value;
@@ -711,8 +1008,8 @@ async function sendMessage(message){
     const url   = cfgProxy.checked ? 'https://corsproxy.io/?' + encodeURIComponent(dest) : dest;
 
     const body = {
-      path    : path,
-      message : message,
+      path,
+      message,
       prompt  : message,
       messages: conv.messages.map(m=>({ role:m.role, content:m.content }))
     };
@@ -728,22 +1025,15 @@ async function sendMessage(message){
     const contentType = r.headers.get('content-type')||'';
 
     if(contentType.includes('text/event-stream')){
-      // Streaming — remove thinking, create fresh row, stream tokens in
-      removeThinking();
-      const row = document.createElement('div');
-      row.className = 'msg-row bot';
-      const av  = document.createElement('div');
-      av.className = 'av bot'; av.textContent = 'B';
-      const bub = document.createElement('div');
-      bub.className = 'bub bot';
-      bub.innerHTML = '<span class="stream-cursor"></span>';
-      row.appendChild(av); row.appendChild(bub);
-      thread.appendChild(row);
-      threadWrap.scrollTop = threadWrap.scrollHeight;
-
+      // Streaming path
       const reader  = r.body.getReader();
       const decoder = new TextDecoder();
       let fullText  = '';
+      let firstToken = true;
+
+      // Row/bubble created lazily on first token
+      let row = null, bub = null, botBody = null, botActions = null;
+
       while(true){
         const { done, value } = await reader.read();
         if(done) break;
@@ -753,12 +1043,63 @@ async function sendMessage(message){
             if(raw==='[DONE]') break;
             try{
               const { token } = JSON.parse(raw);
-              if(token){ fullText+=token; bub.innerHTML=fmt(fullText)+'<span class="stream-cursor"></span>'; threadWrap.scrollTop=threadWrap.scrollHeight; }
+              if(token){
+                fullText += token;
+
+                if(firstToken){
+                  firstToken = false;
+                  // Smooth transition: fade out thinking, then show streaming bubble
+                  fadeOutThinking(()=>{
+                    const botIdx = conv.messages.length; // index where assistant will land
+                    row = document.createElement('div');
+                    row.className = 'msg-row bot';
+                    row.dataset.idx = botIdx;
+                    row.style.cssText = 'animation:fadeUp .2s cubic-bezier(.4,0,.2,1)';
+
+                    const av = document.createElement('div');
+                    av.className = 'av bot'; av.textContent = 'B';
+
+                    botBody = document.createElement('div');
+                    botBody.className = 'msg-body';
+
+                    bub = document.createElement('div');
+                    bub.className = 'bub bot';
+                    bub.innerHTML = fmt(fullText) + '<span class="stream-cursor"></span>';
+
+                    botActions = document.createElement('div');
+                    botActions.className = 'msg-actions';
+
+                    botBody.appendChild(bub);
+                    botBody.appendChild(botActions);
+                    row.appendChild(av);
+                    row.appendChild(botBody);
+                    thread.appendChild(row);
+                    threadWrap.scrollTop = threadWrap.scrollHeight;
+                  });
+                } else if(bub){
+                  bub.innerHTML = fmt(fullText) + '<span class="stream-cursor"></span>';
+                  threadWrap.scrollTop = threadWrap.scrollHeight;
+                }
+              }
             }catch{}
           }
         }
       }
-      bub.innerHTML = fmt(fullText);
+
+      // Streaming done — remove cursor, wire up actions
+      if(bub){
+        bub.innerHTML = fmt(fullText);
+        // Wire actions now that content is final
+        const botIdx = parseInt(row.dataset.idx, 10);
+        const copyBtn = makeActBtn(ICONS.copy, 'Copy', ()=>copyMessage(fullText, copyBtn));
+        const regenBtn = makeActBtn(ICONS.regen, 'Regenerate', ()=>regenerateFrom(botIdx));
+        const delBtn = makeActBtn(ICONS.trash, 'Delete', ()=>deleteMsg(botIdx), true);
+        botActions.appendChild(copyBtn); botActions.appendChild(regenBtn); botActions.appendChild(delBtn);
+      } else {
+        // Edge case: stream ended with no tokens
+        removeThinking();
+      }
+
       conv.messages.push({ role:'assistant', content:fullText });
 
     } else {
@@ -766,8 +1107,8 @@ async function sendMessage(message){
       const data  = contentType.includes('json') ? await r.json() : await r.text();
       const reply = parseReply(data);
       removeThinking();
-      appendBotRow(reply, false);
       conv.messages.push({ role:'assistant', content:reply });
+      appendBotRow(reply, false);
     }
 
     setStatus('Connected','ok');
@@ -778,14 +1119,47 @@ async function sendMessage(message){
     if(errMsg.toLowerCase().includes('fetch')||errMsg==='failed to fetch'){
       errMsg = 'Connection blocked (CORS).\n\nOpen ⚙️ Settings → enable "Use CORS proxy", then try again.';
     }
-    appendBotRow(errMsg, true);
     conv.messages.push({ role:'assistant', content:errMsg, err:true });
+    appendBotRow(errMsg, true);
     setStatus('Connection issue','bad');
   }
 
   saveConvs();
   busy=false; sendBtn.disabled=!msgInput.value.trim(); msgInput.focus();
   renderHist();
+}
+
+// ──────────────────────────────────────────────
+// sendMessage — user sends a new message
+// ──────────────────────────────────────────────
+async function sendMessage(message){
+  message = message.trim();
+  if(!message || busy) return;
+
+  dismissWelcome();
+  welcomeShown = false;
+
+  // Create conversation if needed
+  if(!activeId){
+    const id = 'c'+Date.now();
+    convs[id] = { id, title: message.slice(0,38)+(message.length>38?'…':''), messages:[], ts:Date.now() };
+    activeId = id; saveConvs(); renderHist();
+    convTitle.textContent = convs[id].title;
+  }
+
+  const conv = convs[activeId];
+  if(conv.messages.length===0) conv.title = message.slice(0,38)+(message.length>38?'…':'');
+
+  const msgIdx = conv.messages.length;
+  conv.messages.push({ role:'user', content:message });
+  conv.ts = Date.now();
+  saveConvs();
+
+  // Append user bubble
+  appendUserRow(message, msgIdx);
+  threadWrap.scrollTop = threadWrap.scrollHeight;
+
+  await streamResponse(message, true);
 }
 
 function parseReply(x){

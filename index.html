@@ -1,258 +1,796 @@
 <!doctype html>
 <html lang="en">
 <head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width,initial-scale=1" />
-<title>Baymax Chat</title>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Baymax</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"/>
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Lora:ital,wght@0,400;1,400&display=swap" rel="stylesheet"/>
 <style>
-  *{box-sizing:border-box} body{margin:0;font-family:system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;background:#f6f8fb;color:#1e2530}
-  main{min-height:100vh;display:grid;grid-template-columns:300px 1fr;gap:18px;padding:18px;max-width:1100px;margin:auto}
-  aside,section{background:#fff;border:1px solid #dde3ee;border-radius:8px;box-shadow:0 18px 50px #1b24301a}
-  aside{padding:20px;display:flex;flex-direction:column;gap:16px}
-  h1{margin:0;font-size:28px}.sub{color:#667084;margin:6px 0 10px}.note{font-size:13px;line-height:1.45;color:#667084;background:#f6f8fb;border:1px solid #dde3ee;border-radius:8px;padding:10px}
-  .logo{width:58px;height:58px;border-radius:50%;background:#e44343;color:#fff;display:grid;place-items:center;font-weight:800;font-size:28px}
-  label{font-size:12px;text-transform:uppercase;font-weight:700;color:#596579}
-  input,select,textarea{width:100%;border:1px solid #d8deea;border-radius:8px;padding:12px;font:inherit;outline:none}
-  input:focus,select:focus,textarea:focus{border-color:#e44343;box-shadow:0 0 0 4px #e4434320}
-  .status{margin-top:auto;color:#667084;font-size:14px}.dot{display:inline-block;width:10px;height:10px;border-radius:50%;background:#9aa5b7;margin-right:8px}.ok{background:#20a260}.bad{background:#d83f3f}.wait{background:#d98a13}
-  section{display:grid;grid-template-rows:auto 1fr auto;min-height:calc(100vh - 36px);overflow:hidden}
-  header{padding:18px 20px;border-bottom:1px solid #dde3ee;display:flex;justify-content:space-between;gap:12px;align-items:center}
-  header h2{margin:0;font-size:18px} header p{margin:4px 0 0;color:#667084;font-size:14px}
-  #messages{padding:22px;overflow:auto;display:flex;flex-direction:column;gap:14px}
-  .msg{display:flex;gap:10px;max-width:84%;align-items:flex-end}.user{align-self:flex-end;flex-direction:row-reverse}
-  .mini{width:32px;height:32px;border-radius:50%;display:grid;place-items:center;background:#e44343;color:#fff;font-size:12px;font-weight:800;flex:0 0 auto}.user .mini{background:#26334a}
-  .bubble{padding:13px 15px;border-radius:8px;line-height:1.48;white-space:pre-wrap;overflow-wrap:anywhere;border:1px solid #dde3ee;background:#fff}.user .bubble{background:#26334a;color:#fff;border-color:#26334a}
-  footer{border-top:1px solid #dde3ee;padding:16px;background:#fbfcfe}.bar{display:grid;grid-template-columns:1fr 54px;gap:10px}
-  textarea{min-height:54px;resize:vertical}.send,.clear,.download{border:0;border-radius:8px;background:#e44343;color:#fff;cursor:pointer;font-weight:800}.clear,.download{background:#fff;color:#3e4858;border:1px solid #dde3ee;padding:10px}.download{width:100%;text-align:center;text-decoration:none;display:block}
-  button:disabled{opacity:.65;cursor:wait}.hint{font-size:13px;color:#667084;margin:9px 0 0}
- #chat-area{
-    position:relative;
-    flex:1;
-    overflow:auto;
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg:#f5f3ef;
+  --sb:#ffffff;
+  --s1:#f0ede8;
+  --s2:#e8e4de;
+  --s3:#ddd9d2;
+  --border:#e2ddd6;
+  --border2:#d4cfc7;
+  --text:#1a1714;
+  --text2:#6b6560;
+  --text3:#a09890;
+  --accent:#c96a3a;
+  --accent-light:#f5ebe3;
+  --accent-dim:rgba(201,106,58,.1);
+  --user-bg:#1a1714;
+  --user-text:#f5f3ef;
+  --r:12px;
+  --r-sm:8px;
+  --sb-w:260px;
+  --font:'Inter',system-ui,sans-serif;
+  --serif:'Lora',Georgia,serif;
+  --ease:cubic-bezier(.4,0,.2,1);
 }
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:var(--font);font-size:15px;line-height:1.6;-webkit-font-smoothing:antialiased;overflow:hidden}
+button,input,select,textarea{font-family:var(--font);color:inherit;border:none;background:none;outline:none;cursor:pointer}
 
-#messages{
-    height:100%;
-}
-#welcome{
-  position:absolute;
-  
-     top:0;
-    left:0;
-    right:0;
-    bottom:0;
-  display:flex;
-  flex-direction:column;
-  justify-content:center;
-  align-items:center;
-  text-align:center;
- flex-direction:column;
-  padding:40px;
-  transition:opacity .4s ease,transform .4s ease;
-  background:white;
-  z-index:5;
- animation: welcomeIn .6s ease;
-}
-#section{
-    position:relative;
-}
+/* ── Shell ── */
+.shell{display:flex;height:100vh}
 
+/* ── Sidebar ── */
+.sb{
+  width:var(--sb-w);flex-shrink:0;
+  background:var(--sb);
+  border-right:1px solid var(--border);
+  display:flex;flex-direction:column;
+  overflow:hidden;
+  transition:transform .3s var(--ease);
+  position:relative;z-index:5;
+}
+.sb-head{padding:16px 14px 12px;flex-shrink:0;border-bottom:1px solid var(--border)}
+.brand{display:flex;align-items:center;gap:10px;padding:2px 0 12px}
+.brand-logo{
+  width:32px;height:32px;border-radius:10px;
+  background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  font-size:14px;font-weight:700;flex-shrink:0;
+}
+.brand-name{font-size:15px;font-weight:700;letter-spacing:-.3px}
+.brand-tag{font-size:11px;color:var(--text3);font-weight:400}
+.new-chat{
+  display:flex;align-items:center;gap:8px;width:100%;
+  padding:9px 12px;border-radius:var(--r-sm);
+  background:var(--s1);border:1px solid var(--border2);
+  font-size:13px;font-weight:500;color:var(--text2);
+  transition:all .15s;cursor:pointer;
+}
+.new-chat:hover{background:var(--accent-light);border-color:var(--accent);color:var(--accent)}
+.new-chat svg{width:14px;height:14px}
 
-#welcome h2{
-  margin:12px 0 8px;
-  font-size:34px;
+.sb-scroll{flex:1;overflow-y:auto;padding:8px 10px}
+.sb-scroll::-webkit-scrollbar{width:3px}
+.sb-scroll::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.date-lbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3);padding:12px 6px 4px}
+.hist-item{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 10px;border-radius:var(--r-sm);
+  cursor:pointer;transition:background .15s;
+  position:relative;
 }
+.hist-item:hover{background:var(--s1)}
+.hist-item.active{background:var(--accent-light);border:1px solid rgba(201,106,58,.2)}
+.hist-title{font-size:13px;color:var(--text2);overflow:hidden;white-space:nowrap;text-overflow:ellipsis;flex:1}
+.hist-item.active .hist-title{color:var(--accent)}
+.hist-del{
+  opacity:0;width:20px;height:20px;border-radius:5px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .15s,background .15s;
+}
+.hist-item:hover .hist-del{opacity:1}
+.hist-del:hover{background:var(--s3)}
+.hist-del svg{width:12px;height:12px;color:var(--text3)}
+.no-hist{font-size:12px;color:var(--text3);padding:14px 8px;text-align:center;line-height:1.6}
 
-#welcome p{
-  max-width:460px;
-  color:#667084;
-  line-height:1.7;
+.sb-foot{padding:12px 10px 14px;border-top:1px solid var(--border);flex-shrink:0;display:flex;flex-direction:column;gap:2px}
+.sb-btn{
+  display:flex;align-items:center;gap:9px;width:100%;
+  padding:9px 10px;border-radius:var(--r-sm);
+  font-size:13px;color:var(--text2);transition:all .15s;cursor:pointer;
 }
+.sb-btn:hover{background:var(--s1);color:var(--text)}
+.sb-btn svg{width:15px;height:15px;flex-shrink:0}
+.status-dot{width:7px;height:7px;border-radius:50%;background:var(--text3);flex-shrink:0;margin-left:auto;transition:background .3s}
+.status-dot.ok{background:#22c55e}
+.status-dot.bad{background:#ef4444}
+.status-dot.wait{background:#f59e0b;animation:pulse-anim .9s ease-in-out infinite}
 
-#welcome .logo{
-  width:72px;
-  height:72px;
-  font-size:32px;
-}
- @keyframes welcomeIn{
-    from{
-        opacity:0;
-        transform:translateY(25px);
-    }
-    to{
-        opacity:1;
-        transform:translateY(0);
-    }
-}
+/* ── Main ── */
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden;position:relative}
 
-#welcome.hidden{
-    opacity:0;
-    transform:translateY(-15px);
-    transition:.45s;
-    pointer-events:none;
+/* ── Topbar ── */
+.topbar{
+  height:54px;flex-shrink:0;display:flex;align-items:center;justify-content:space-between;
+  padding:0 18px;border-bottom:1px solid var(--border);background:var(--bg);
 }
- @media(max-width:800px){main{grid-template-columns:1fr}.msg{max-width:96%}section{min-height:70vh}}
+.topbar-l{display:flex;align-items:center;gap:10px}
+.burger{display:none;width:34px;height:34px;border-radius:var(--r-sm);align-items:center;justify-content:center;transition:background .15s;cursor:pointer}
+.burger:hover{background:var(--s1)}
+.burger svg{width:18px;height:18px;color:var(--text2)}
+.conv-title{font-size:14px;font-weight:500;color:var(--text2)}
+.topbar-r{display:flex;gap:4px}
+.icon-btn{
+  width:34px;height:34px;border-radius:var(--r-sm);
+  display:flex;align-items:center;justify-content:center;
+  color:var(--text2);transition:all .15s;cursor:pointer;
+}
+.icon-btn:hover{background:var(--s1);color:var(--text)}
+.icon-btn svg{width:17px;height:17px}
+
+/* ── Thread ── */
+.thread-wrap{flex:1;overflow-y:auto;scroll-behavior:smooth}
+.thread-wrap::-webkit-scrollbar{width:4px}
+.thread-wrap::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.thread{padding:24px 20px 8px;max-width:740px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+
+/* ── Welcome Screen ── */
+.welcome{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  min-height:55vh;text-align:center;padding:32px 20px;
+  animation:fadeUp .5s var(--ease);
+  transition:opacity .35s var(--ease),transform .35s var(--ease);
+}
+.welcome.out{opacity:0;transform:translateY(-20px);pointer-events:none}
+.w-circle{
+  width:72px;height:72px;border-radius:22px;background:var(--accent);
+  display:flex;align-items:center;justify-content:center;
+  font-size:30px;font-weight:700;color:#fff;margin-bottom:20px;
+  box-shadow:0 8px 32px rgba(201,106,58,.25);
+  animation:float 3s ease-in-out infinite;
+}
+.welcome h2{font-size:24px;font-weight:700;letter-spacing:-.4px;margin-bottom:8px}
+.welcome p{color:var(--text2);font-size:14px;max-width:360px;line-height:1.75;margin-bottom:28px}
+.chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:480px}
+.chip{
+  padding:8px 16px;border-radius:100px;
+  border:1px solid var(--border2);background:var(--sb);
+  font-size:13px;color:var(--text2);cursor:pointer;
+  transition:all .2s;
+}
+.chip:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-light);transform:translateY(-1px)}
+
+/* ── Messages ── */
+.msg-row{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .22s var(--ease)}
+.msg-row.user{flex-direction:row-reverse}
+.av{
+  width:28px;height:28px;border-radius:9px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  font-size:11px;font-weight:700;
+}
+.av.bot{background:var(--accent);color:#fff}
+.av.user{background:var(--user-bg);color:var(--user-text)}
+.bub{
+  padding:12px 16px;border-radius:var(--r);
+  font-size:14px;line-height:1.68;
+  max-width:min(520px,78vw);overflow-wrap:anywhere;
+}
+.bub.bot{
+  background:var(--sb);border:1px solid var(--border);
+  color:var(--text);font-family:var(--serif);font-size:14.5px;
+  border-left:2.5px solid var(--accent);
+  animation:slideInBot .25s var(--ease);
+  box-shadow:0 1px 4px rgba(0,0,0,.05);
+}
+.bub.user{
+  background:var(--user-bg);color:var(--user-text);
+  box-shadow:0 1px 4px rgba(0,0,0,.12);
+}
+.bub.err{border-left-color:#ef4444;background:#fef2f2;color:#b91c1c}
+
+/* ── Baymax Thinking Animation ── */
+.thinking-wrap{display:flex;gap:10px;align-items:flex-start;animation:fadeUp .22s var(--ease)}
+.thinking-bub{
+  padding:16px 20px;border-radius:var(--r);
+  background:var(--sb);border:1px solid var(--border);
+  border-left:2.5px solid var(--accent);
+  box-shadow:0 1px 4px rgba(0,0,0,.05);
+  display:flex;align-items:center;gap:12px;
+}
+.baymax-face{
+  width:36px;height:36px;flex-shrink:0;
+  animation:blink 2.8s ease-in-out infinite;
+}
+.thinking-text{
+  display:flex;flex-direction:column;gap:3px;
+}
+.thinking-label{font-size:12px;color:var(--text3);font-weight:500;letter-spacing:.02em}
+.thinking-dots{display:flex;gap:5px;align-items:center;margin-top:4px}
+.thinking-dots span{
+  width:6px;height:6px;border-radius:50%;background:var(--accent);opacity:.3;
+  animation:think-bounce .9s ease-in-out infinite;
+}
+.thinking-dots span:nth-child(2){animation-delay:.18s}
+.thinking-dots span:nth-child(3){animation-delay:.36s}
+
+/* ── Input zone ── */
+.input-zone{padding:12px 20px 18px;background:var(--bg);border-top:1px solid var(--border);flex-shrink:0}
+.input-box{
+  max-width:740px;margin:0 auto;
+  background:var(--sb);border:1.5px solid var(--border2);
+  border-radius:var(--r);display:flex;align-items:flex-end;
+  transition:border-color .2s,box-shadow .2s;
+  box-shadow:0 1px 4px rgba(0,0,0,.05);
+}
+.input-box:focus-within{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-dim)}
+.input-box textarea{
+  flex:1;resize:none;padding:14px 14px;
+  font-size:14px;line-height:1.55;color:var(--text);
+  background:transparent;min-height:52px;max-height:180px;overflow-y:auto;
+}
+.input-box textarea::placeholder{color:var(--text3)}
+.input-box textarea::-webkit-scrollbar{width:3px}
+.input-box textarea::-webkit-scrollbar-thumb{background:var(--border2)}
+.send-btn{
+  width:38px;height:38px;margin:7px;flex-shrink:0;
+  border-radius:var(--r-sm);background:var(--accent);color:#fff;
+  display:flex;align-items:center;justify-content:center;
+  transition:opacity .15s,transform .12s,box-shadow .15s;
+  box-shadow:0 2px 8px rgba(201,106,58,.3);
+}
+.send-btn:hover{opacity:.9;transform:translateY(-1px);box-shadow:0 4px 12px rgba(201,106,58,.4)}
+.send-btn:active{transform:scale(.94);opacity:1}
+.send-btn:disabled{opacity:.3;cursor:not-allowed;transform:none;box-shadow:none}
+.send-btn svg{width:16px;height:16px}
+.input-hint{text-align:center;font-size:11px;color:var(--text3);margin-top:8px;max-width:740px;margin-left:auto;margin-right:auto}
+
+/* ── Settings Panel ── */
+.sp{
+  position:absolute;top:0;right:0;bottom:0;width:300px;
+  background:var(--sb);border-left:1px solid var(--border);
+  display:flex;flex-direction:column;
+  transform:translateX(100%);transition:transform .28s var(--ease);
+  z-index:10;overflow-y:auto;
+}
+.sp.open{transform:translateX(0)}
+.sp::-webkit-scrollbar{width:3px}
+.sp::-webkit-scrollbar-thumb{background:var(--border2);border-radius:2px}
+.sp-head{display:flex;align-items:center;justify-content:space-between;padding:18px 20px 14px;border-bottom:1px solid var(--border);flex-shrink:0}
+.sp-head h2{font-size:15px;font-weight:600}
+.sp-body{padding:20px;display:flex;flex-direction:column;gap:18px}
+.sp-section{display:flex;flex-direction:column;gap:10px}
+.sp-section-title{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--text3)}
+.sp-field{display:flex;flex-direction:column;gap:5px}
+.sp-field label{font-size:13px;color:var(--text2)}
+.sp-field select,.sp-field input[type=text]{
+  background:var(--s1);border:1px solid var(--border2);
+  border-radius:var(--r-sm);padding:9px 12px;
+  font-size:13px;color:var(--text);width:100%;-webkit-appearance:none;
+  transition:border-color .15s;
+}
+.sp-field select:focus,.sp-field input:focus{border-color:var(--accent);outline:none}
+.sp-field select{
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23a09890' stroke-width='2'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");
+  background-repeat:no-repeat;background-position:right 10px center;padding-right:28px;cursor:pointer;
+}
+.sp-divider{height:1px;background:var(--border)}
+.sp-note{font-size:12px;color:var(--text3);line-height:1.65;padding:10px 12px;background:var(--s1);border-radius:var(--r-sm)}
+.danger-btn{
+  width:100%;padding:9px 12px;border-radius:var(--r-sm);
+  background:var(--s1);border:1px solid var(--border2);
+  color:var(--text2);font-size:13px;text-align:left;cursor:pointer;transition:all .15s;
+}
+.danger-btn:hover{background:#fef2f2;border-color:#fca5a5;color:#dc2626}
+
+/* ── Overlay ── */
+.overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.3);z-index:4}
+
+/* ── Keyframes ── */
+@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+@keyframes slideInBot{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
+@keyframes float{0%,100%{transform:translateY(0)}50%{transform:translateY(-6px)}}
+@keyframes blink{0%,90%,100%{transform:scaleY(1)}95%{transform:scaleY(.15)}}
+@keyframes pulse-anim{0%,100%{opacity:1}50%{opacity:.35}}
+@keyframes think-bounce{0%,60%,100%{transform:translateY(0);opacity:.3}30%{transform:translateY(-6px);opacity:1}}
+@keyframes pop-in{from{opacity:0;transform:scale(.85)}to{opacity:1;transform:scale(1)}}
+
+/* ── Mobile ── */
+@media(max-width:680px){
+  .sb{position:fixed;left:0;top:0;bottom:0;z-index:20;transform:translateX(-100%)}
+  .sb.open{transform:translateX(0)}
+  .overlay.mob{display:block}
+  .burger{display:flex}
+  .thread{padding:16px 12px 8px}
+  .input-zone{padding:10px 12px 14px}
+  .bub{max-width:88vw}
+  .sp{width:min(300px,90vw)}
+}
+@media(prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+.toggle-wrap{display:flex;align-items:center;cursor:pointer;flex-shrink:0}
+.toggle-wrap input{display:none}
+.toggle-track{width:40px;height:22px;border-radius:11px;background:var(--border2);position:relative;transition:background .2s;flex-shrink:0;border:1px solid var(--border2)}
+.toggle-wrap input:checked + .toggle-track{background:var(--accent);border-color:var(--accent)}
+.toggle-thumb{position:absolute;top:2px;left:2px;width:16px;height:16px;border-radius:50%;background:#fff;box-shadow:0 1px 3px rgba(0,0,0,.2);transition:transform .2s}
+.toggle-wrap input:checked + .toggle-track .toggle-thumb{transform:translateX(18px)}
 </style>
 </head>
 <body>
-<main>
-  <aside>
-    <div class="logo">B</div>
-    <div><h1>Baymax</h1><p class="sub">Simple FastAPI chat frontend.</p></div>
-    <label for="endpoint">Endpoint</label><select id="endpoint"><option value="/chat">/chat</option><option value="/api/chat">/api/chat</option><option value="/ask">/ask</option><option value="/generate">/generate</option><option value="/">Root</option></select>
-    <a class="download" href="/baymax-chat-public.html" download="baymax-chat-public.html">Download Public HTML</a>
-    <p class="note">Preview uses a local relay. The downloaded public HTML calls Baymax directly, so Baymax must allow browser CORS for the public host.</p>
-    <div class="status" role="status"><span id="dot" class="dot"></span><span id="status">Ready</span></div>
+<div class="overlay" id="overlay"></div>
+<div class="shell">
+
+<!-- ══ Sidebar ══ -->
+<aside class="sb" id="sb">
+  <div class="sb-head">
+    <div class="brand">
+      <div class="brand-logo">B</div>
+      <div><div class="brand-name">Baymax</div><div class="brand-tag">Health Assistant</div></div>
+    </div>
+    <button class="new-chat" id="new-chat-btn">
+      <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4.5v15m7.5-7.5h-15"/></svg>
+      New conversation
+    </button>
+  </div>
+  <div class="sb-scroll" id="hist-list"></div>
+  <div class="sb-foot">
+    <div class="sb-btn" id="status-row">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M5.636 5.636a9 9 0 1 0 12.728 0M12 3v9"/></svg>
+      <span id="status-lbl" style="font-size:13px">Ready</span>
+      <div class="status-dot" id="status-dot"></div>
+    </div>
+    <button class="sb-btn" id="settings-btn">
+      <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M9.594 3.94c.09-.542.56-.94 1.11-.94h2.593c.55 0 1.02.398 1.11.94l.213 1.281c.063.374.313.686.645.87.074.04.147.083.22.127.324.196.72.257 1.075.124l1.217-.456a1.125 1.125 0 0 1 1.37.49l1.296 2.247a1.125 1.125 0 0 1-.26 1.431l-1.003.827c-.293.24-.438.613-.431.992a6.759 6.759 0 0 1 0 .255c-.007.378.138.75.43.99l1.005.828c.424.35.534.954.26 1.43l-1.298 2.247a1.125 1.125 0 0 1-1.369.491l-1.217-.456c-.355-.133-.75-.072-1.076.124a6.57 6.57 0 0 1-.22.128c-.331.183-.581.495-.644.869l-.213 1.28c-.09.543-.56.941-1.11.941h-2.594c-.55 0-1.02-.398-1.11-.94l-.213-1.281c-.062-.374-.312-.686-.644-.87a6.52 6.52 0 0 1-.22-.127c-.325-.196-.72-.257-1.076-.124l-1.217.456a1.125 1.125 0 0 1-1.369-.49l-1.297-2.247a1.125 1.125 0 0 1 .26-1.431l1.004-.827c.292-.24.437-.613.43-.992a6.932 6.932 0 0 1 0-.255c.007-.378-.138-.75-.43-.99l-1.004-.828a1.125 1.125 0 0 1-.26-1.43l1.297-2.247a1.125 1.125 0 0 1 1.37-.491l1.216.456c.356.133.751.072 1.076-.124.072-.044.146-.087.22-.128.332-.183.582-.495.644-.869l.214-1.281Z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0Z"/></svg>
+      Settings
+    </button>
+  </div>
+</aside>
+
+<!-- ══ Main ══ -->
+<div class="main" id="main">
+
+  <div class="topbar">
+    <div class="topbar-l">
+      <button class="burger icon-btn" id="burger-btn"><svg fill="none" stroke="currentColor" stroke-width="1.8" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5"/></svg></button>
+      <span class="conv-title" id="conv-title">Baymax</span>
+    </div>
+    <div class="topbar-r">
+      <button class="icon-btn" id="clear-btn" title="Clear chat">
+        <svg fill="none" stroke="currentColor" stroke-width="1.5" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M14.74 9l-.346 9m-4.788 0L9.26 9m9.968-3.21c.342.052.682.107 1.022.166m-1.022-.165L18.16 19.673a2.25 2.25 0 0 1-2.244 2.077H8.084a2.25 2.25 0 0 1-2.244-2.077L4.772 5.79m14.456 0a48.108 48.108 0 0 0-3.478-.397m-12 .562c.34-.059.68-.114 1.022-.165m0 0a48.11 48.11 0 0 1 3.478-.397m7.5 0v-.916c0-1.18-.91-2.164-2.09-2.201a51.964 51.964 0 0 0-3.32 0c-1.18.037-2.09 1.022-2.09 2.201v.916m7.5 0a48.667 48.667 0 0 0-7.5 0"/></svg>
+      </button>
+    </div>
+  </div>
+
+  <div class="thread-wrap" id="thread-wrap">
+    <div class="thread" id="thread"></div>
+  </div>
+
+  <div class="input-zone">
+    <div class="input-box">
+      <textarea id="msg-input" placeholder="Ask Baymax anything…" rows="1"></textarea>
+      <button class="send-btn" id="send-btn" disabled>
+        <svg fill="none" stroke="currentColor" stroke-width="2.2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5"/></svg>
+      </button>
+    </div>
+    <p class="input-hint">Enter to send · Shift+Enter for new line</p>
+  </div>
+
+  <!-- Settings panel -->
+  <aside class="sp" id="sp">
+    <div class="sp-head">
+      <h2>Settings</h2>
+      <button class="icon-btn" id="close-sp"><svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg></button>
+    </div>
+    <div class="sp-body">
+      <div class="sp-section">
+        <div class="sp-section-title">API Connection</div>
+        <div class="sp-field">
+          <label>Server URL (your ngrok URL)</label>
+          <input type="text" id="cfg-url" value="https://germinate-neon-hertz.ngrok-free.dev" placeholder="https://xxxx.ngrok-free.app" oninput="saveSettings()"/>
+        </div>
+        <div class="sp-field">
+          <label>Endpoint</label>
+          <select id="cfg-ep" onchange="saveSettings()">
+            <option value="/chat">/chat</option>
+            <option value="/api/chat">/api/chat</option>
+            <option value="/ask">/ask</option>
+            <option value="/generate">/generate</option>
+            <option value="/">/ (root)</option>
+          </select>
+        </div>
+        <div class="sp-field" style="flex-direction:row;align-items:center;justify-content:space-between;gap:10px">
+          <label style="margin:0;font-size:13px;color:var(--text2)">Use CORS proxy</label>
+          <label class="toggle-wrap">
+            <input type="checkbox" id="cfg-proxy" onchange="saveSettings()"/>
+            <span class="toggle-track"><span class="toggle-thumb"></span></span>
+          </label>
+        </div>
+        <p class="sp-note" id="proxy-note">
+          <strong>If you see "Failed to fetch"</strong>, your browser is blocking the request (CORS). Enable the CORS proxy to fix this — it routes requests through a public relay.<br><br>
+          Alternatively, add <code style="font-size:11px;background:var(--s2);padding:1px 4px;border-radius:3px">ngrok-skip-browser-warning: true</code> to your FastAPI CORS config.
+        </p>
+      </div>
+      <div class="sp-divider"></div>
+      <div class="sp-section">
+        <div class="sp-section-title">History</div>
+        <button class="danger-btn" onclick="clearAll()">Delete all conversations</button>
+      </div>
+      <div class="sp-divider"></div>
+      <div class="sp-section">
+        <div class="sp-section-title">About</div>
+        <p class="sp-note">Baymax — your personal AI health assistant.<br><br>Feedback: ameen</p>
+      </div>
+    </div>
   </aside>
-  <section aria-label="Baymax chat">
-    <header><div><h2>Conversation</h2><p id="route">Using POST /chat</p></div><button class="clear" id="clear" type="button">Clear</button></header>
-   <div id="chat-area"> 
-   <div id="welcome">
-    <div class="logo">B</div>
-    <h2>Baymax</h2>
-    <p>
-        Your personal AI health assistant.<br><br>
 
-        Ask about symptoms, medicines,
-        nutrition, fitness, wellness,
-        or anything you're curious about.<br><br>
-                Give Feedback @ ameen.
-    </p>
 </div>
-   <div id="messages" aria-live="polite"></div></div>
-    <footer><form class="bar" id="form"><textarea id="text" placeholder="Message Baymax..." required></textarea><button class="send" id="send" type="submit" aria-label="Send">➜</button></form><p class="hint">Enter sends. Shift + Enter adds a line.</p></footer>
-  </section>
-</main>
+</div>
+
 <script>
-const BAYMAX_BASE="https://germinate-neon-hertz.ngrok-free.dev";
-const USE_RELAY=false;
-const $=s=>document.querySelector(s), msgs=$("#messages"), endpoint=$("#endpoint"), dot=$("#dot"), status=$("#status"), route=$("#route"), text=$("#text"), send=$("#send");
-let history=[];
-function setStatus(t,c=""){status.textContent=t;dot.className=("dot "+c).trim()}
-function render(){msgs.innerHTML=history.map(m=>`<div class="msg ${m.role==="user"?"user":"bot"}"><div class="mini">${m.role==="user"?"You":"B"}</div><div class="bubble"></div></div>`).join("");[...msgs.querySelectorAll(".bubble")].forEach((b,i)=>b.textContent=history[i].content);msgs.scrollTop=msgs.scrollHeight}
-function add(role,content){history.push({role,content});render()}
-function reply(x){if(typeof x==="string")return x;return x?.reply||x?.response||x?.answer||x?.message?.content||x?.message||x?.output||x?.text||x?.choices?.[0]?.message?.content||JSON.stringify(x,null,2)}
-async function sendMsg(message){
+// ──────────────────────────────────────────────
+// State
+// ──────────────────────────────────────────────
+let convs = {};
+let activeId = null;
+let busy = false;
+let welcomeShown = true;
 
-    const welcome = document.getElementById("welcome");
+const CKEY = 'bm_convs';
+const SKEY = 'bm_settings';
 
-    if (welcome) {
-        welcome.classList.add("hidden");
+// ──────────────────────────────────────────────
+// DOM
+// ──────────────────────────────────────────────
+const thread    = document.getElementById('thread');
+const threadWrap= document.getElementById('thread-wrap');
+const msgInput  = document.getElementById('msg-input');
+const sendBtn   = document.getElementById('send-btn');
+const histList  = document.getElementById('hist-list');
+const statusDot = document.getElementById('status-dot');
+const statusLbl = document.getElementById('status-lbl');
+const convTitle = document.getElementById('conv-title');
+const sb        = document.getElementById('sb');
+const overlay   = document.getElementById('overlay');
+const sp        = document.getElementById('sp');
+const cfgUrl    = document.getElementById('cfg-url');
+const cfgEp     = document.getElementById('cfg-ep');
+const cfgProxy  = document.getElementById('cfg-proxy');
 
-        setTimeout(() => {
-            welcome.remove();
-        }, 400);
-    }
-
-    add("user", message);
-
-    send.disabled = true;
-    text.disabled = true;
-    setStatus("Contacting Baymax", "wait");
-
-    try {
-
-        const path = endpoint.value;
-
-        const body = {
-            path,
-            message,
-            prompt: message,
-            messages: history
-        };
-
-        const url = USE_RELAY
-            ? "/baymax-proxy"
-            : BAYMAX_BASE + (path === "/" ? "" : path);
-
-        const r = await fetch(url,{
-            method:"POST",
-            headers:{
-                "Content-Type":"application/json",
-                "ngrok-skip-browser-warning":"true"
-            },
-            body:JSON.stringify(body)
-        });
-
-        const data =
-            (r.headers.get("content-type") || "").includes("json")
-            ? await r.json()
-            : await r.text();
-
-        if(!r.ok){
-            throw new Error(
-                typeof data==="string"
-                ? data
-                : data.detail || r.statusText
-            );
-        }
-
-        add("assistant", reply(data));
-
-        route.textContent = "Using POST " + path;
-        setStatus("Connected","ok");
-
-    } catch(e){
-
-        add("assistant","I could not reach Baymax.\n\n"+(e.message||e));
-
-        setStatus("Connection issue","bad");
-
-    } finally{
-
-        render();
-
-        send.disabled = false;
-        text.disabled = false;
-        text.focus();
-    }
+// ──────────────────────────────────────────────
+// Settings persistence
+// ──────────────────────────────────────────────
+function saveSettings(){
+  localStorage.setItem(SKEY, JSON.stringify({ url:cfgUrl.value, ep:cfgEp.value, proxy:cfgProxy.checked }));
+}
+function loadSettings(){
+  try {
+    const s = JSON.parse(localStorage.getItem(SKEY)) || {};
+    if(s.url) cfgUrl.value = s.url;
+    if(s.ep)  cfgEp.value  = s.ep;
+    if(s.proxy) cfgProxy.checked = true;
+  } catch{}
 }
 
+// ──────────────────────────────────────────────
+// Converation persistence
+// ──────────────────────────────────────────────
+function saveConvs(){ localStorage.setItem(CKEY, JSON.stringify(convs)); }
+function loadConvs(){
+  try{ convs = JSON.parse(localStorage.getItem(CKEY)) || {}; } catch{ convs = {}; }
+}
 
-$("#form").onsubmit=e=>{e.preventDefault();const v=text.value.trim();if(v){text.value="";sendMsg(v)}};
-text.onkeydown=e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();$("#form").requestSubmit()}};
-$("#clear").onclick = () => {
+// ──────────────────────────────────────────────
+// History sidebar
+// ──────────────────────────────────────────────
+function renderHist(){
+  const list = Object.values(convs).sort((a,b)=>b.ts-a.ts);
+  if(!list.length){
+    histList.innerHTML = '<p class="no-hist">No conversations yet.<br>Start a new one!</p>';
+    return;
+  }
+  const now = new Date(); const tod = now.toDateString();
+  const yes = new Date(now-86400000).toDateString();
+  const groups = {};
+  list.forEach(c=>{
+    const d = new Date(c.ts).toDateString();
+    const lbl = d===tod?'Today':d===yes?'Yesterday':new Date(c.ts).toLocaleDateString(undefined,{month:'short',day:'numeric'});
+    (groups[lbl]=groups[lbl]||[]).push(c);
+  });
+  let html = '';
+  Object.entries(groups).forEach(([lbl,items])=>{
+    html += `<div class="date-lbl">${lbl}</div>`;
+    items.forEach(c=>{
+      html += `<div class="hist-item${c.id===activeId?' active':''}" data-id="${c.id}">
+        <span class="hist-title">${esc(c.title)}</span>
+        <button class="hist-del" data-del="${c.id}">
+          <svg fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18 18 6M6 6l12 12"/></svg>
+        </button>
+      </div>`;
+    });
+  });
+  histList.innerHTML = html;
+  histList.querySelectorAll('.hist-item').forEach(el=>{
+    el.addEventListener('click',e=>{
+      if(e.target.closest('.hist-del')) return;
+      setActive(el.dataset.id);
+    });
+  });
+  histList.querySelectorAll('.hist-del').forEach(btn=>{
+    btn.addEventListener('click',e=>{
+      e.stopPropagation();
+      const id = btn.dataset.del;
+      delete convs[id]; saveConvs();
+      if(activeId===id){ activeId=null; renderThread(); convTitle.textContent='Baymax'; }
+      renderHist();
+    });
+  });
+}
 
-    history = [];
+function setActive(id){
+  activeId = id;
+  welcomeShown = false;
+  renderThread();
+  renderHist();
+  const c = convs[id];
+  convTitle.textContent = c ? c.title : 'Baymax';
+  closeSB();
+}
 
-    render();
+function newConv(){
+  const id = 'c'+Date.now();
+  convs[id] = { id, title:'New conversation', messages:[], ts:Date.now() };
+  saveConvs(); setActive(id); renderHist();
+  welcomeShown = false;
+  renderThread();
+  msgInput.focus();
+}
 
-    if (!document.getElementById("welcome")) {
+function clearAll(){
+  if(!confirm('Delete all conversations? This cannot be undone.')) return;
+  convs={}; saveConvs(); activeId=null;
+  welcomeShown=true;
+  renderHist(); renderThread(); convTitle.textContent='Baymax';
+}
 
-        const welcome = document.createElement("div");
-
-        welcome.id = "welcome";
-
-        welcome.innerHTML = `
-            <div class="logo">B</div>
-            <h2>Baymax</h2>
-
-            <p>
-                Your personal AI health assistant.<br>
-
-                Ask about symptoms,
-                medicines,
-                nutrition,
-                fitness,
-                wellness,
-                or anything you're curious about.<br>
-                Give Feedback @ ameen.
-            </p>
-        `;
-
-        document.querySelector("header").insertAdjacentElement(
-    "afterend",
-    welcome
-);
+// ──────────────────────────────────────────────
+// Thread rendering
+// ──────────────────────────────────────────────
+function renderThread(){
+  const c = activeId ? convs[activeId] : null;
+  if(!c || !c.messages.length){
+    if(welcomeShown || !activeId){
+      thread.innerHTML = buildWelcome();
+    } else {
+      thread.innerHTML = '';
     }
+    return;
+  }
+  thread.innerHTML = c.messages.map(m=>buildMsg(m)).join('');
+  threadWrap.scrollTop = threadWrap.scrollHeight;
+}
 
-    setStatus("Ready");
-};
- endpoint.onchange = () => {
-    route.textContent = "Using POST " + endpoint.value;
-};
+function buildWelcome(){
+  return `<div class="welcome" id="welcome-el">
+    <div class="w-circle">B</div>
+    <h2>Hello! I'm Baymax</h2>
+    <p>Your personal AI health companion. Ask me about symptoms, medicines, nutrition, fitness, mental wellness, and more.</p>
+    <div class="chips">
+      <div class="chip" onclick="quick('How do I stay properly hydrated?')">💧 Hydration</div>
+      <div class="chip" onclick="quick('What vitamins should I take daily?')">💊 Daily vitamins</div>
+      <div class="chip" onclick="quick('How can I manage stress better?')">🧘 Stress relief</div>
+      <div class="chip" onclick="quick('What causes fatigue and how do I fix it?')">⚡ Fatigue</div>
+      <div class="chip" onclick="quick('Give me a simple beginner workout plan.')">🏃 Workout plan</div>
+      <div class="chip" onclick="quick('How do I improve my sleep quality?')">🌙 Better sleep</div>
+    </div>
+  </div>`;
+}
 
-render();
+function buildMsg(m){
+  const bot = m.role==='assistant';
+  return `<div class="msg-row ${bot?'bot':'user'}">
+    <div class="av ${bot?'bot':'user'}">${bot?'B':'You'}</div>
+    <div class="bub ${bot?'bot':'user'}${m.err?' err':''}">${fmt(m.content)}</div>
+  </div>`;
+}
+
+function addThinking(){
+  const el = document.createElement('div');
+  el.className = 'thinking-wrap'; el.id = 'thinking';
+  el.innerHTML = `
+    <div class="av bot">B</div>
+    <div class="thinking-bub">
+      <svg class="baymax-face" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <circle cx="20" cy="20" r="18" fill="#f5ebe3" stroke="#c96a3a" stroke-width="1.5"/>
+        <ellipse cx="14" cy="19" rx="3.5" ry="3.5" fill="#c96a3a"/>
+        <ellipse cx="26" cy="19" rx="3.5" ry="3.5" fill="#c96a3a"/>
+        <path d="M13 28 Q20 31 27 28" stroke="#c96a3a" stroke-width="1.5" stroke-linecap="round" fill="none"/>
+        <rect x="16" y="18" width="8" height="2" rx="1" fill="#f5ebe3"/>
+      </svg>
+      <div class="thinking-text">
+        <span class="thinking-label">Baymax is thinking</span>
+        <div class="thinking-dots"><span></span><span></span><span></span></div>
+      </div>
+    </div>`;
+  thread.appendChild(el);
+  threadWrap.scrollTop = threadWrap.scrollHeight;
+}
+function removeThinking(){
+  const el = document.getElementById('thinking');
+  if(el) el.remove();
+}
+
+// ──────────────────────────────────────────────
+// Dismiss welcome when first message sent
+// ──────────────────────────────────────────────
+function dismissWelcome(){
+  const w = document.getElementById('welcome-el');
+  if(!w) return;
+  w.classList.add('out');
+  setTimeout(()=>{ if(w.parentNode) w.remove(); }, 380);
+}
+
+// ──────────────────────────────────────────────
+// API call — exactly as the original working code
+// ──────────────────────────────────────────────
+async function sendMessage(message){
+  message = message.trim();
+  if(!message || busy) return;
+
+  // Dismiss welcome screen
+  dismissWelcome();
+  welcomeShown = false;
+
+  // Create conversation if needed
+  if(!activeId){
+    const id = 'c'+Date.now();
+    convs[id] = { id, title: message.slice(0,38)+(message.length>38?'…':''), messages:[], ts:Date.now() };
+    activeId = id; saveConvs(); renderHist();
+    convTitle.textContent = convs[id].title;
+  }
+
+  const conv = convs[activeId];
+  if(conv.messages.length===0) conv.title = message.slice(0,38)+(message.length>38?'…':'');
+  conv.messages.push({ role:'user', content:message });
+  conv.ts = Date.now();
+  saveConvs();
+
+  // Append user bubble immediately
+  const userEl = document.createElement('div');
+  userEl.innerHTML = buildMsg({ role:'user', content:message });
+  thread.appendChild(userEl.firstElementChild);
+  threadWrap.scrollTop = threadWrap.scrollHeight;
+
+  busy = true; sendBtn.disabled = true;
+  setStatus('Connecting…','wait');
+  addThinking();
+
+  try {
+    const path  = cfgEp.value;
+    const base  = cfgUrl.value.replace(/\/+$/,'');
+    const dest  = base + (path==='/'?'':path);
+    // Use corsproxy.io when toggled on — free, no signup needed
+    const url   = cfgProxy.checked ? 'https://corsproxy.io/?' + encodeURIComponent(dest) : dest;
+
+    const body = {
+      path    : path,
+      message : message,
+      prompt  : message,
+      messages: conv.messages.map(m=>({ role:m.role, content:m.content }))
+    };
+
+    const headers = {
+      'Content-Type'              : 'application/json',
+      'ngrok-skip-browser-warning': 'true'
+    };
+
+    const r = await fetch(url, { method:'POST', headers, body:JSON.stringify(body) });
+
+    const data = (r.headers.get('content-type')||'').includes('json')
+      ? await r.json()
+      : await r.text();
+
+    if(!r.ok) throw new Error(typeof data==='string'? data : data?.detail||r.statusText);
+
+    const reply = parseReply(data);
+    conv.messages.push({ role:'assistant', content:reply });
+    setStatus('Connected','ok');
+  } catch(e){
+    let errMsg = e.message||String(e);
+    // Give helpful CORS guidance
+    if(errMsg.toLowerCase().includes('fetch')||errMsg.toLowerCase().includes('network')||errMsg==='failed to fetch'){
+      errMsg = 'Connection blocked (CORS).\n\nFix: Open ⚙️ Settings → enable "Use CORS proxy", then try again.\n\nOr make sure your FastAPI server allows cross-origin requests from your GitHub Pages domain.';
+    }
+    conv.messages.push({ role:'assistant', content:errMsg, err:true });
+    setStatus('Connection issue','bad');
+  }
+
+  saveConvs();
+  removeThinking();
+
+  // Append bot reply with animation
+  const last = conv.messages[conv.messages.length-1];
+  const botEl = document.createElement('div');
+  botEl.innerHTML = buildMsg(last);
+  thread.appendChild(botEl.firstElementChild);
+  threadWrap.scrollTop = threadWrap.scrollHeight;
+
+  busy=false; sendBtn.disabled=!msgInput.value.trim(); msgInput.focus();
+  renderHist();
+}
+
+function parseReply(x){
+  if(typeof x==='string') return x;
+  return x?.reply||x?.response||x?.answer||x?.message?.content||x?.message||x?.output||x?.text||x?.choices?.[0]?.message?.content||JSON.stringify(x,null,2);
+}
+
+function quick(text){ msgInput.value=text; autoResize(); sendBtn.disabled=false; sendMessage(text); msgInput.value=''; autoResize(); }
+
+// ──────────────────────────────────────────────
+// Status
+// ──────────────────────────────────────────────
+function setStatus(lbl, state=''){
+  statusLbl.textContent = lbl;
+  statusDot.className = 'status-dot'+(state?' '+state:'');
+}
+
+// ──────────────────────────────────────────────
+// Input
+// ──────────────────────────────────────────────
+function autoResize(){
+  msgInput.style.height='auto';
+  msgInput.style.height=Math.min(msgInput.scrollHeight,180)+'px';
+}
+msgInput.addEventListener('input',()=>{ autoResize(); sendBtn.disabled=!msgInput.value.trim()||busy; });
+msgInput.addEventListener('keydown',e=>{
+  if(e.key==='Enter'&&!e.shiftKey){
+    e.preventDefault();
+    const v=msgInput.value;
+    if(v.trim()&&!busy){ msgInput.value=''; autoResize(); sendBtn.disabled=true; sendMessage(v); }
+  }
+});
+sendBtn.addEventListener('click',()=>{
+  const v=msgInput.value;
+  if(v.trim()&&!busy){ msgInput.value=''; autoResize(); sendBtn.disabled=true; sendMessage(v); }
+});
+
+// ──────────────────────────────────────────────
+// Clear
+// ──────────────────────────────────────────────
+document.getElementById('clear-btn').addEventListener('click',()=>{
+  if(!activeId) return;
+  convs[activeId].messages=[]; saveConvs();
+  welcomeShown=false; renderThread();
+});
+
+// ──────────────────────────────────────────────
+// Sidebar / settings
+// ──────────────────────────────────────────────
+function closeSB(){ sb.classList.remove('open'); overlay.classList.remove('mob'); }
+function closeSP(){ sp.classList.remove('open'); }
+document.getElementById('burger-btn').addEventListener('click',()=>{ sb.classList.toggle('open'); overlay.classList.toggle('mob'); });
+overlay.addEventListener('click',()=>{ closeSB(); closeSP(); });
+document.getElementById('new-chat-btn').addEventListener('click', newConv);
+document.getElementById('settings-btn').addEventListener('click',()=>{ sp.classList.toggle('open'); });
+document.getElementById('close-sp').addEventListener('click', closeSP);
+
+// ──────────────────────────────────────────────
+// Helpers
+// ──────────────────────────────────────────────
+function esc(s){ return String(s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); }
+function fmt(text){
+  return esc(text)
+    .replace(/\*\*(.*?)\*\*/g,'<strong>$1</strong>')
+    .replace(/\*(.*?)\*/g,'<em>$1</em>')
+    .replace(/`([^`\n]+)`/g,'<code style="font-family:monospace;font-size:12.5px;background:rgba(0,0,0,.06);padding:1px 5px;border-radius:4px;font-style:normal">$1</code>')
+    .replace(/\n\n+/g,'<br><br>')
+    .replace(/\n/g,'<br>');
+}
+
+// ──────────────────────────────────────────────
+// Boot
+// ──────────────────────────────────────────────
+loadSettings();
+loadConvs();
+renderHist();
+welcomeShown = true;
+renderThread(); // shows welcome screen
 </script>
 </body>
 </html>
